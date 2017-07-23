@@ -1034,6 +1034,7 @@ class TestReaction(unittest.TestCase):
         This method tests that a change in degeneracy will result in a modified rate constant
         """
 
+        prefactor = self.reaction.kinetics.A.value_si
         newDegeneracy = 8
         self.reaction.degeneracy = newDegeneracy
         self.assertIn('Multiplied by reaction path degeneracy 8.0', self.reaction.kinetics.comment)
