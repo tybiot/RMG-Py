@@ -130,9 +130,12 @@ def species(label, *args, **kwargs):
         spec.transportData = collisionModel
         spec.energyTransferModel = energyTransferModel
         spec.thermo = thermo
-        
-        if not spec.hasStatMech() and structure is not None: 
-            # generate stat mech info if it wasn't provided before
+        logging.info('{0},{1},{2}'.format(len(args) != 1, not spec.hasStatMech(),
+                     structure is not None))
+        if len(args) != 1 and not spec.hasStatMech() and structure is not None: 
+            # generate stat mech info if it wasn't provided before and there is
+            # no stat mech job input into args
+            logging.info('generating stat mech for species {0}'.format(spec.label))
             spec.generateStatMech()
 
         if structure and not molecularWeight:
