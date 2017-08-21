@@ -478,7 +478,7 @@ class TestBond(unittest.TestCase):
             try:
                 bond.applyAction(action)
             except ActionError:
-                self.assertTrue(order0 < 1)
+                self.assertTrue(order0 < 1.0001)
             
     def testApplyActionGainRadical(self):
         """
