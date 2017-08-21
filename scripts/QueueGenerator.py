@@ -1,0 +1,301 @@
+    #!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jun 7 11:38:25 2017
+
+@author: mattjohnson
+"""
+
+import os
+
+rmgDir = '/Users/mattjohnson/RMGCODE/RMG-Py' #SET THIS the directory of RMG-Py
+runDir = '/Users/mattjohnson/RMGCODE/RMG-Py/examples/rmg/syngas' #SET THIS the run directory of the RMG job
+outDir = '/Users/mattjohnson/Desktop' #SET THIS directory the queue.json will be made in
+
+os.chdir(rmgDir)
+
+import rmgpy
+import re
+from rmgpy.tools.sensitivity import runSensitivity
+from rmgpy.tools.uncertainty import Uncertainty, ThermoParameterUncertainty, KineticParameterUncertainty
+from rmgpy.chemkin import *
+from rmgpy.tools.canteraModel import *
+from rmgpy.tools.plot import parseCSVData
+import json
+
+spcs_regex = '[d][G][\[][#\)\(\w]*[\]]'
+spcre = re.compile(spcs_regex)
+
+def getThermoLabel(d):
+    """
+    retrives the species name associated with the data entry
+    """
+    x = spcre.findall(d.label)
+    if len(x) > 1:
+        logging.warn('thermo label retrival from {0} may have been unsafe'.format(d.label))
+    return x[0][3:-1]
+
+def reduceData(d):
+    """
+    reduces the time dependent sensitivities down to one number
+    """
+    return max(abs(d.data))
+
+spcs_label_regex = '[l][a][b][e][l][\n\w]*[=][\n\w]*[\"\'][\(\)#\w]*[\"\']'
+splb = re.compile(spcs_label_regex)
+
+def makeSensInputFile(inputFile):
+    """
+    reads the original input file and generates a new input file
+    that does sensitivity analysis on the first species listed in the file
+    """
+    #get input file name
+    inputPath,inputName = os.path.split(inputFile)
+    inputName = inputFile.split('/')[-1][0:-3]
+    #get the original input file text
+    f = open(inputFile,'rb')
+    txt = f.readlines()
+    wtxt = ''
+    for s in txt:
+        wtxt += s
+        
+    #get the first species name
+    spcs = splb.findall(wtxt)
+    assert len(spcs) > 0, wtxt
+    spc = spcs[0]
+    if '\"' in spc:
+        ind1 = spc.find('\"')
+        ind2 = spc.rfind('\"')
+    elif '\'' in spc:
+        ind1 = spc.find('\'')
+        ind2 = spc.rfind('\'')
+    spcstr = spc[ind1+1:ind2]
+    line = 'sensitivity=['+'\''+spcstr+'\''+'],\n'+'sensitivityThreshold=0.0,\n'
+    
+    #find reactor section
+    rxnind = wtxt.find('Reactor(')
+    rxnind = rxnind+7
+    endind = findCloseParen(wtxt,rxnind)
+    
+    rtxt = wtxt[rxnind+1:endind]
+    eq = rtxt.count('=')
+    commas = rtxt.count(',')
+    parenPairs = rtxt.count(')')+rtxt.count('}')
+
+    if eq == commas-parenPairs:
+        newtxt = wtxt[:endind]+line+wtxt[endind:]
+    else:
+        ind = endind-1
+        while not (wtxt[ind].isalpha() or wtxt[ind].isdigit() or wtxt[ind] == ')'):
+            ind -= 1
+        newtxt = wtxt[:ind+2]+line+wtxt[endind:]
+    
+    newFName = inputName+'Sens'+'.py'
+    f = open(os.path.join(inputPath,newFName),'wb')
+    f.write(newtxt)
+    f.close()
+    
+    assert os.path.exists(os.path.join(inputPath,newFName))
+    
+    return newFName
+    
+def findCloseParen(wtxt,ind):
+    """
+    if ind is the index an open paren occurs at within wtxt
+    this function will return the close paren that closes
+    that open paren
+    """
+    a = 1#'(' start at the open paren
+    b = 0#')'
+    while a > b:
+        ind += 1
+        s = wtxt[ind]
+        if s == '(':
+            a += 1
+        elif s == ')':
+            b += 1
+    return ind
+
+def getSens(runDir):
+    """
+    calculates sensitivities, returns a list of sensitivity values in 
+    species order
+    thermo sensitivity values are in 1/(kcal/mol)
+    """
+    
+    inputFile = runDir+'/input.py'
+    inputFile = runDir+'/'+makeSensInputFile(inputFile)
+    
+    chemDir = runDir+'/chemkin'
+    chemkinFile = chemDir+'/chem_annotated.inp'
+    spcDict = chemDir+'/species_dictionary.txt'
+    
+    assert os.path.exists(inputFile)
+    
+    runSensitivity(inputFile,chemkinFile,spcDict)
+    
+    sensStr = '/solver/sensitivity_1_SPC_1.csv'
+    strInd = sensStr.find('1')
+    q = 1
+        
+    time, dataList = parseCSVData(runDir+'/solver/sensitivity_1_SPC_1.csv')
+    
+    thermoDataList = [d for d in dataList if 'dG[' in d.label]
+    #rxnDataList = list(set(dataList)-set(thermoDataList))
+        
+    thermoSens = [reduceData(d) for d in thermoDataList]
+    
+    #all other reactors
+    while True:
+        q += 1
+        newSensStr = sensStr[:strInd]+str(q)+sensStr[strInd+1:]
+        try:
+            time, dataList = parseCSVData(runDir+newSensStr)
+        except:
+            break
+        thermoDataList = [d for d in dataList if 'dG[' in d.label]
+        tempSens = [reduceData(d) for d in thermoDataList]
+        for i in xrange(len(thermoSens)):
+            if thermoSens[i] < tempSens[i]:
+                thermoSens[i] = tempSens[i]
+                
+    return thermoSens
+
+def getUncertainties(runDir):
+    """
+    Calculates uncertainties, returns a list of uncertainty values in 
+    species order
+    thermo uncertainty values are in kcal/mol
+    """
+    
+    chemDir = runDir+'/chemkin'
+    chemkinFile = chemDir+'/chem_annotated.inp'
+    spcDict = chemDir+'/species_dictionary.txt'
+    
+    try:
+        os.mkdir('UncertaintyDir')
+    except OSError:
+        pass
+    
+    uncertainty = Uncertainty(outputDirectory='UncertaintyDir')
+    uncertainty.loadModel(chemkinFile, spcDict)
+    uncertainty.loadDatabase()
+    uncertainty.extractSourcesFromModel()
+    uncertainty.compileAllSources()
+    uncertainty.assignParameterUncertainties()
+    gParamEngine = ThermoParameterUncertainty()
+    #kParamEngine = KineticParameterUncertainty()
+    
+    thermoUnc = uncertainty.thermoInputUncertainties
+    return thermoUnc
+
+def getSpcs(runDir):
+    """
+    retrives the species objects
+    """
+    chemDir = runDir+'/chemkin'
+    chemkinFile = chemDir+'/chem_annotated.inp'
+    spcDict = chemDir+'/species_dictionary.txt'
+    species,reactions = loadChemkinFile(chemkinFile,spcDict)
+    return species
+
+class QueueEntry(object):
+    
+    def __init__(self,value):
+        self.value = value
+        
+    def __cmp__(self,obj):
+        dif = self.value-obj.value
+        if dif > 0:
+            return 1
+        elif dif == 0:
+            return 0
+        elif dif < 0:
+            return -1
+
+import logging
+
+class ThermoQueueEntry(QueueEntry):
+    
+    def __init__(self,spc,sensitivity,uncertainty):
+        self.spc = spc
+        self.label = str(spc)
+        self.sensitivity = sensitivity
+        self.uncertainty = uncertainty
+        QueueEntry.__init__(self,sensitivity*uncertainty)
+    
+    def __str__(self):
+        spc = self.spc
+        s = ''
+        s += '('
+        s += spc.generate_aug_inchi()+', '
+        s += spc.toAdjacencyList()+', '
+        s += str(spc.thermo)+', '
+        s += str(self.uncertainty) + ', '
+        s += str(self.value)+', '
+        s += 'waiting' +', '
+        s += ')'
+        return s
+    
+    def toDict(self):
+        smiles = self.spc.molecule[0].toSMILES()
+        try:
+            auginchi = self.spc.generate_aug_inchi()
+        except:
+            logging.warn('Augmented inchi generation through rdkit for species with smiles {0} has failed'.format(smiles))
+            try:
+                inchi = self.spc.molecule[0].toInChI()
+                auginchi = inchi+'/u'+str(self.spc.molecule[0].multiplicity)
+                logging.warn('generated new augmented inchi is {0}'.format(auginchi))
+            except:
+                logging.warn('regular inchi could not be generated for species {0}'.format(smiles))
+                logging.warn('secondary augmented inchi generation failed for species {0}'.format(smiles))
+                auginchi = ''
+            
+        return {'name':self.spc.label,
+                'AugInChI':auginchi,
+                'SMILES': smiles,
+                'AdjList':self.spc.toAdjacencyList(),
+                'Uncertainty':self.uncertainty,
+                'Sensitivity':self.sensitivity,
+                'Value':self.value,
+                'Status':'waiting'}
+        
+if __name__ == "__main__":
+    
+    while True:
+        species = getSpcs(runDir)
+        thermoUnc = getUncertainties(runDir)
+        
+        try:
+            thermoSens = getSens(runDir)
+        except:
+            continue
+                
+        queue = []
+        
+        try:
+            for i in xrange(len(thermoSens)):
+                queue.append(ThermoQueueEntry(species[i],thermoSens[i],thermoUnc[i]))
+        except:
+            logging.warn('likely species sensitivities and uncertainties didnt have the same length')
+            continue
+        
+        sortedQueue = sorted(queue)[::-1]
+                
+        dictQueue = []
+        for entry in sortedQueue:
+            dictQueue.append(entry.toDict())
+            
+        #print to json
+        fname = 'queue.json'
+            
+        os.chdir(outDir)
+        fid = open(fname,'wb')
+            
+        json.dump(dictQueue,fid)
+            
+        fid.close()
+        
+        logging.info('New JSON made')
+
