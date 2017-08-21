@@ -2139,8 +2139,11 @@ class KineticsFamily(Database):
             
             # Discard the last line, unless it's the only line!
             # The last line is 'Estimated using ... for rate rule (originalTemplate)'
-            if len(lines) == 1:
-                comment = lines[0]
+            if not 'Average of' in kinetics.comment:
+                if 'from training reaction' in lines[0]:
+                    comment = lines[1]+' '+lines[0]
+                else:
+                    comment = lines[0]
                 if comment.startswith('Estimated using template'):
                     tokenTemplateLabel = comment.split()[3][1:-1]
                     ruleEntry, trainingEntry = self.retrieveOriginalEntry(tokenTemplateLabel) 
