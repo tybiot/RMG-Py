@@ -727,7 +727,7 @@ class RMG(util.Subject):
                                         rxnSysUnimolecularThreshold = reactionSystem.unimolecularThreshold,
                                         rxnSysBimolecularThreshold = reactionSystem.bimolecularThreshold)
                                 else:
-                                    logging.warn('Reaction thresholds/flags for Reaction System {0} was not updated due to resurrection'.format(index))
+                                    logging.warn('Reaction thresholds/flags for Reaction System {0} was not updated due to resurrection'.format(index+1))
         
                             logging.info('')    
                         else:
