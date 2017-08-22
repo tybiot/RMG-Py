@@ -62,12 +62,139 @@ species(
         structure=SMILES("O")
         )
 
-
 #Reaction systems
 #currently RMG models only constant temperature and pressure as homogeneous batch reactors.  
 #two options are: simpleReactor for gas phase or liquidReactor for liquid phase
 #use can use multiple reactors in an input file for each condition you want to test.  
+simpleReactor(
+	#specifies reaction temperature with units
+    temperature=(680,'K'),
+	#specifies reaction pressure with units
+    pressure=(1.0,'bar'),
+	#list initial mole fractions of compounds using the label from the 'species' label.  
+	#RMG will normalize if sum/=1
+    initialMoleFractions={
+        "CO": 1,
+        "H2": 1,
+        "CH4": 1.0/15.0,
+        "CO2" : 1.0/5.0,
+        "H2O" : .5,
+        
+    },
+	#the following two values specify when to determine the final output model
+	#only one must be specified
+	#the first condition to be satisfied will terminate the process
+    terminationTime=(12,'s'),
+)
 
+simpleReactor(
+	#specifies reaction temperature with units
+    temperature=(680,'K'),
+	#specifies reaction pressure with units
+    pressure=(1.0,'bar'),
+	#list initial mole fractions of compounds using the label from the 'species' label.  
+	#RMG will normalize if sum/=1
+    initialMoleFractions={
+        "CO": 2,
+        "H2": 1,
+        "CH4": 1.0/15.0,
+        "CO2" : 1.0/5.0,
+        "H2O" : .5,
+        
+    },
+	#the following two values specify when to determine the final output model
+	#only one must be specified
+	#the first condition to be satisfied will terminate the process
+
+    terminationTime=(12,'s'),
+)
+simpleReactor(
+	#specifies reaction temperature with units
+    temperature=(800,'K'),
+	#specifies reaction pressure with units
+    pressure=(1.0,'bar'),
+	#list initial mole fractions of compounds using the label from the 'species' label.  
+	#RMG will normalize if sum/=1
+    initialMoleFractions={
+        "CO": 1,
+        "H2": 1,
+        "CH4": 1.0/15.0,
+        "CO2" : 1.0/5.0,
+        "H2O" : .5,
+        
+    },
+	#the following two values specify when to determine the final output model
+	#only one must be specified
+	#the first condition to be satisfied will terminate the process
+
+    terminationTime=(12,'s'),
+)
+
+simpleReactor(
+	#specifies reaction temperature with units
+    temperature=(800,'K'),
+	#specifies reaction pressure with units
+    pressure=(1.0,'bar'),
+	#list initial mole fractions of compounds using the label from the 'species' label.  
+	#RMG will normalize if sum/=1
+    initialMoleFractions={
+        "CO": 2,
+        "H2": 1,
+        "CH4": 1.0/15.0,
+        "CO2" : 1.0/5.0,
+        "H2O" : .5,
+        
+    },
+	#the following two values specify when to determine the final output model
+	#only one must be specified
+	#the first condition to be satisfied will terminate the process
+
+    terminationTime=(12,'s'),
+)
+
+simpleReactor(
+	#specifies reaction temperature with units
+    temperature=(1100,'K'),
+	#specifies reaction pressure with units
+    pressure=(1.0,'bar'),
+	#list initial mole fractions of compounds using the label from the 'species' label.  
+	#RMG will normalize if sum/=1
+    initialMoleFractions={
+        "CO": 1,
+        "H2": 1,
+        "CH4": 1.0/15.0,
+        "CO2" : 1.0/5.0,
+        "H2O" : .5,
+        
+    },
+	#the following two values specify when to determine the final output model
+	#only one must be specified
+	#the first condition to be satisfied will terminate the process
+
+    terminationTime=(12,'s'),
+)
+
+simpleReactor(
+	#specifies reaction temperature with units
+    temperature=(1100,'K'),
+	#specifies reaction pressure with units
+    pressure=(1.0,'bar'),
+	#list initial mole fractions of compounds using the label from the 'species' label.  
+	#RMG will normalize if sum/=1
+    initialMoleFractions={
+        "CO": 2,
+        "H2": 1,
+        "CH4": 1.0/15.0,
+        "CO2" : 1.0/5.0,
+        "H2O" : .5,
+        
+    },
+	#the following two values specify when to determine the final output model
+	#only one must be specified
+	#the first condition to be satisfied will terminate the process
+
+    terminationTime=(12,'s'),
+)
 simpleReactor(
 	#specifies reaction temperature with units
     temperature=(680,'K'),
