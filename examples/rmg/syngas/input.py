@@ -343,7 +343,7 @@ model(
 	#determines the relative flux to put a species into the core.  
 	#A smaller value will result in a larger, more complex model
 	#when running a new model, it is recommended to start with higher values and then decrease to converge on the model
-    toleranceMoveToCore=0.02,
+    toleranceMoveToCore=0.05,
     #comment out the next three terms to disable pruning
 	   #determines the relative flux needed to not remove species from the model.  
 	   #Lower values will keep more species and utilize more memory
@@ -351,7 +351,7 @@ model(
 	   #determines when to stop a ODE run to add a species.  
 	   #Lower values will improve speed. 
 	   #if it is too low, may never get to the end simulation to prune species.  
-    toleranceInterruptSimulation=0.02,
+    toleranceInterruptSimulation=0.05,
 	   #number of edge species needed to accumulate before pruning occurs
 	   #larger values require more memory and will prune less often
     maximumEdgeSpecies=100000,
