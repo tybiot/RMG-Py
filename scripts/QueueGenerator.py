@@ -6,13 +6,26 @@ Created on Wed Jun 7 11:38:25 2017
 @author: mattjohnson
 """
 
+"""
+QueueGenerator script
+
+syntax:  python QueueGenerator.py rmgDir runDir outDir
+
+This script uses RMG from rmgDir, and the input file and chem_annotated.inp file it finds in runDir
+to generate a json format file named 'queue.json' in outDir
+
+It does this in an infinite while loop such that it will continually grab the input file and 
+the latest chem_annotated.inp file from runDir and replace the old 'queue.json' file
+"""
+
 import os
 import sys
+import json
+import re
 
 #rmgDir = '/Users/mattjohnson/RMGCODE/RMG-Py' #SET THIS the directory of RMG-Py
 #runDir = '/Users/mattjohnson/RMGCODE/RMG-Py/examples/rmg/syngas' #SET THIS the run directory of the RMG job
 #outDir = '/Users/mattjohnson/Desktop' 
-
 
 rmgDir = sys.argv[1] #rmg directory
 runDir = sys.argv[2] #the run directory of the RMG job
@@ -21,13 +34,12 @@ outDir = sys.argv[3] #directory the queue.json will be made in
 os.chdir(rmgDir)
 
 import rmgpy
-import re
 from rmgpy.tools.sensitivity import runSensitivity
 from rmgpy.tools.uncertainty import Uncertainty, ThermoParameterUncertainty, KineticParameterUncertainty
 from rmgpy.chemkin import *
 from rmgpy.tools.canteraModel import *
 from rmgpy.tools.plot import parseCSVData
-import json
+
 
 spcs_regex = '[d][G][\[][#\)\(\w]*[\]]'
 spcre = re.compile(spcs_regex)
@@ -129,22 +141,22 @@ def getSens(runDir):
     thermo sensitivity values are in 1/(kcal/mol)
     """
     
-    inputFile = runDir+'/input.py'
-    inputFile = runDir+'/'+makeSensInputFile(inputFile)
+    inputFile = os.path.join(runDir,'input.py')
+    inputFile = os.path.join(runDir,makeSensInputFile(inputFile))
     
-    chemDir = runDir+'/chemkin'
-    chemkinFile = chemDir+'/chem_annotated.inp'
-    spcDict = chemDir+'/species_dictionary.txt'
+    chemDir = os.path.join(runDir,'chemkin')
+    chemkinFile = os.path.join(chemDir,'chem_annotated.inp')
+    spcDict = os.path.join(chemDir,'species_dictionary.txt')
     
     assert os.path.exists(inputFile)
     
     runSensitivity(inputFile,chemkinFile,spcDict)
     
-    sensStr = '/solver/sensitivity_1_SPC_1.csv'
+    sensStr = os.path.join('solver','sensitivity_1_SPC_1.csv')
     strInd = sensStr.find('1')
     q = 1
         
-    time, dataList = parseCSVData(runDir+'/solver/sensitivity_1_SPC_1.csv')
+    time, dataList = parseCSVData(os.path.join(runDir,'solver','sensitivity_1_SPC_1.csv'))
     
     thermoDataList = [d for d in dataList if 'dG[' in d.label]
     #rxnDataList = list(set(dataList)-set(thermoDataList))
@@ -174,9 +186,9 @@ def getUncertainties(runDir):
     thermo uncertainty values are in kcal/mol
     """
     
-    chemDir = runDir+'/chemkin'
-    chemkinFile = chemDir+'/chem_annotated.inp'
-    spcDict = chemDir+'/species_dictionary.txt'
+    chemDir = os.path.join(runDir,'chemkin')
+    chemkinFile = os.path.join(chemDir,'chem_annotated.inp')
+    spcDict = os.path.join(chemDir,'species_dictionary.txt')
     
     try:
         os.mkdir('UncertaintyDir')
@@ -199,9 +211,9 @@ def getSpcs(runDir):
     """
     retrives the species objects
     """
-    chemDir = runDir+'/chemkin'
-    chemkinFile = chemDir+'/chem_annotated.inp'
-    spcDict = chemDir+'/species_dictionary.txt'
+    chemDir = os.path.join(runDir,'chemkin')
+    chemkinFile = os.path.join(chemDir,'chem_annotated.inp')
+    spcDict = os.path.join(chemDir,'species_dictionary.txt')
     species,reactions = loadChemkinFile(chemkinFile,spcDict)
     return species
 
@@ -270,8 +282,11 @@ class ThermoQueueEntry(QueueEntry):
 if __name__ == "__main__":
     
     while True:
-        species = getSpcs(runDir)
-        thermoUnc = getUncertainties(runDir)
+        try:
+            species = getSpcs(runDir)
+            thermoUnc = getUncertainties(runDir)
+        except:
+            continue
         
         try:
             thermoSens = getSens(runDir)
