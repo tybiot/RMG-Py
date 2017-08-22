@@ -7,11 +7,17 @@ Created on Wed Jun 7 11:38:25 2017
 """
 
 import os
+import sys
 
-rmgDir = '/Users/mattjohnson/RMGCODE/RMG-Py' #SET THIS the directory of RMG-Py
-runDir = '/Users/mattjohnson/RMGCODE/RMG-Py/examples/rmg/syngas' #SET THIS the run directory of the RMG job
-outDir = '/Users/mattjohnson/Desktop' #SET THIS directory the queue.json will be made in
+#rmgDir = '/Users/mattjohnson/RMGCODE/RMG-Py' #SET THIS the directory of RMG-Py
+#runDir = '/Users/mattjohnson/RMGCODE/RMG-Py/examples/rmg/syngas' #SET THIS the run directory of the RMG job
+#outDir = '/Users/mattjohnson/Desktop' 
 
+
+rmgDir = sys.argv[1] #rmg directory
+runDir = sys.argv[2] #the run directory of the RMG job
+outDir = sys.argv[3] #directory the queue.json will be made in
+    
 os.chdir(rmgDir)
 
 import rmgpy
@@ -296,6 +302,4 @@ if __name__ == "__main__":
         json.dump(dictQueue,fid)
             
         fid.close()
-        
-        logging.info('New JSON made')
 
