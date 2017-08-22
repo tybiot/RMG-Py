@@ -574,7 +574,7 @@ cdef class ReactionSystem(DASx):
         surfaceSpeciesIndices = self.surfaceSpeciesIndices
         surfaceReactionIndices = self.surfaceReactionIndices
         
-       
+        totalDivAccumNums = None
 
         invalidObjects = []
         newSurfaceReactions = []
@@ -615,39 +615,47 @@ cdef class ReactionSystem(DASx):
         prevTime = self.t
         while not terminated:
             # Integrate forward in time by one time step
+            
             if not firstTime:
                 try:
                     self.step(stepTime)
                 except DASxError as e:
                     logging.error("Trying to step from time {} to {}".format(prevTime, stepTime))
-                    logging.error("Core species names: {!r}".format([getSpeciesIdentifier(s) for s in coreSpecies]))
-                    logging.error("Core species moles: {!r}".format(self.y[:numCoreSpecies]))
-                    logging.error("Volume: {!r}".format(self.V))
-                    logging.error("Core species net rates: {!r}".format(self.coreSpeciesRates))
-                    logging.error("Edge species net rates: {!r}".format(self.edgeSpeciesRates))
-                    logging.error("Network leak rates: {!r}".format(self.networkLeakRates))
+                    
                     logging.info('Resurrecting Model...')
-                        
+                    
                     if invalidObjects == []:
                         #species flux criterion
-                        ind = numpy.argmax(edgeSpeciesRateRatios)
-                        obj = edgeSpecies[ind]
-                        logging.info('At time {0:10.4e} s, species {1} at rate ratio {2} was added to model core in model resurrection process'.format(self.t, obj,edgeSpeciesRateRatios[ind]))
-                        invalidObjects.append(obj)
+                        if len(edgeSpeciesRateRatios) > 0:
+                            ind = numpy.argmax(edgeSpeciesRateRatios)
+                            obj = edgeSpecies[ind]
+                            logging.info('At time {0:10.4e} s, species {1} at rate ratio {2} was added to model core in model resurrection process'.format(self.t, obj,maxEdgeSpeciesRates[ind]))
+                            invalidObjects.append(obj)
                         
-                        if totalDivAccumNums: #if dynamics data available
+                        if totalDivAccumNums and len(totalDivAccumNums) > 0: #if dynamics data available
                             ind = numpy.argmax(totalDivAccumNums)
                             obj = edgeReactions[ind]
                             logging.info('At time {0:10.4e} s, Reaction {1} at dynamics number {2} was added to model core in model resurrection process'.format(self.t, obj,totalDivAccumNums[ind]))
                             invalidObjects.append(obj)
                         
-                        if pdepNetworks and networkLeakRateRatios != []:
+                        if pdepNetworks != [] and networkLeakRateRatios != []:
                             ind = numpy.argmax(networkLeakRateRatios)
                             obj = pdepNetworks[ind]
                             logging.info('At time {0:10.4e} s, PDepNetwork #{1:d} at {2} was sent for exploring during model resurrection process'.format(self.t, maxNetwork.index, networkLeakRateRatios[ind],toleranceMoveToCore))
                             invalidObjects.append(obj)
-                                
-                    return False,invalidObjects,surfaceSpecies,surfaceReactions
+                    
+                    if invalidObjects != []:
+                        return False,invalidObjects,surfaceSpecies,surfaceReactions
+                    else:
+                        logging.error('Model Resurrection has failed')
+                        logging.error("Core species names: {!r}".format([getSpeciesIdentifier(s) for s in coreSpecies]))
+                        logging.error("Core species moles: {!r}".format(self.y[:numCoreSpecies]))
+                        logging.error("Volume: {!r}".format(self.V))
+                        logging.error("Core species net rates: {!r}".format(self.coreSpeciesRates))
+                        logging.error("Edge species net rates: {!r}".format(self.edgeSpeciesRates))
+                        logging.error("Network leak rates: {!r}".format(self.networkLeakRates))
+                        raise DASxError
+                        
             
             y_coreSpecies = self.y[:numCoreSpecies]
             totalMoles = numpy.sum(y_coreSpecies)
