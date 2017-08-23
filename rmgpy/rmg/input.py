@@ -52,8 +52,10 @@ speciesDict = {}
 
 def database(
              thermoLibraries = None,
+             reloadedThermoLibraries=None,
              transportLibraries = None,
              reactionLibraries = None,
+             reloadedReactionLibraries = None,
              frequenciesLibraries = None,
              seedMechanisms = None,
              kineticsFamilies = 'default',
@@ -64,12 +66,15 @@ def database(
     # We don't actually load the database until after we're finished reading
     # the input file
     if isinstance(thermoLibraries, str): thermoLibraries = [thermoLibraries]
+    if isinstance(reloadedThermoLibraries, str): reloadedThermoLibraries = [reloadedThermoLibraries]
     if isinstance(transportLibraries, str): transportLibraries = [transportLibraries]
     if isinstance(reactionLibraries, str): reactionLibraries = [reactionLibraries]
+    if isinstance(reloadedReactionLibraries, str): reloadedReactionLibraries = [reloadedReactionLibraries]
     if isinstance(seedMechanisms, str): seedMechanisms = [seedMechanisms]
     if isinstance(frequenciesLibraries, str): frequenciesLibraries = [frequenciesLibraries]
     rmg.databaseDirectory = settings['database.directory']
     rmg.thermoLibraries = thermoLibraries or []
+    rmg.reloadedThermoLibraries = reloadedThermoLibraries or []
     rmg.transportLibraries = transportLibraries
     # Modify reactionLibraries if the user didn't specify tuple input
     if reactionLibraries:
@@ -83,6 +88,7 @@ def database(
                 raise TypeError('reaction libraries must be input as tuples or strings')
             index += 1
     rmg.reactionLibraries = reactionLibraries or []
+    rmg.reloadedReactionLibraries = reloadedReactionLibraries or []
     rmg.seedMechanisms = seedMechanisms or []
     rmg.statmechLibraries = frequenciesLibraries or []
     rmg.kineticsEstimator = kineticsEstimator
