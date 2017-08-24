@@ -788,7 +788,9 @@ class ThermoDatabase(object):
         """
         Load a single thermo library
         """
+        
         f = libraryName + '.py'
+        assert f in os.listdir(path), 'library {0} could not be found in path'.format(libraryName)
         if os.path.exists(os.path.join(path, f)):
             logging.info('Loading thermodynamics library from {0} in {1}...'.format(f, path))
             library = ThermoLibrary()
