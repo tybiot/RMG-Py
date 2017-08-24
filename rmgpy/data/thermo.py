@@ -782,20 +782,34 @@ class ThermoDatabase(object):
 
         else:
             for libraryName in libraries:
-                f = libraryName + '.py'
-                if os.path.exists(os.path.join(path, f)):
-                    logging.info('Loading thermodynamics library from {0} in {1}...'.format(f, path))
-                    library = ThermoLibrary()
-                    library.load(os.path.join(path, f), self.local_context, self.global_context)
-                    library.label = os.path.splitext(f)[0]
-                    self.libraries[library.label] = library
-                    self.libraryOrder.append(library.label)
-                else:
-                    if libraryName == "KlippensteinH2O2":
-                        logging.info("""\n** Note: The thermo library KlippensteinH2O2 was replaced and is no longer available in RMG.
+                self.loadLibrary(path,libraryName)
+                
+    def loadLibrary(self,path,libraryName):
+        """
+        Load a single thermo library
+        """
+        f = libraryName + '.py'
+        if os.path.exists(os.path.join(path, f)):
+            logging.info('Loading thermodynamics library from {0} in {1}...'.format(f, path))
+            library = ThermoLibrary()
+            library.load(os.path.join(path, f), self.local_context, self.global_context)
+            library.label = os.path.splitext(f)[0]
+            self.libraries[library.label] = library
+            self.libraryOrder.append(library.label)
+        else:
+            if libraryName == "KlippensteinH2O2":
+                logging.info("""\n** Note: The thermo library KlippensteinH2O2 was replaced and is no longer available in RMG.
                         For H2 combustion chemistry consider using the BurkeH2O2 library instead\n""")
-                    raise Exception('Library {} not found in {}...Please check if your library is correctly placed'.format(libraryName, path))
-
+                raise Exception('Library {} not found in {}...Please check if your library is correctly placed'.format(libraryName, path))
+    
+        
+    def reloadLibraries(self,path,libraryNames=[]):
+        """
+        reloads the libraries in libraryNames from path
+        """
+        for libraryName in libraryNames:
+            self.loadLibrary(path,libraryNames)
+        
     def loadGroups(self, path):
         """
         Load the thermo database from the given `path` on disk, where `path`
