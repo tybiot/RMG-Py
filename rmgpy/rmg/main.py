@@ -342,6 +342,62 @@ class RMG(util.Subject):
             for family in self.database.kinetics.families.values():
                 family.fillKineticsRulesByAveragingUp(verbose=self.verboseComments)
     
+    def reloadThermoLibraries(self,reloadedThermoLibraries):
+        """
+        reloads the thermo libraries listed in the input and 
+        if thermo values are different between the current and newly loaded library
+        the new thermo is assigned to the associated core species
+        """
+        for name in reloadedThermoLibraries:
+            oldEntries = self.database.thermo.libraries[name].entries.values()
+            path = os.path.join(settings['database.directory'],'thermo','libraries')
+            self.database.thermo.reloadLibraries(path,reloadedThermoLibraries)
+            newEntries = self.database.thermo.libraries[name].entries.values()
+            
+            #need to eliminate identical entries
+            changedEntries = []
+            for oldEntry in oldEntries:
+                for newEntry in newEntries:
+                    if not (oldEntry.index == newEntry.index and oldEntry.thermo == newEntry.thermo):
+                        changedEntries.append(newEntry)
+                        
+            for changedEntry in changedEntries:
+                label = changedEntry.label
+                thermo = changedEntry.data
+                for spc in self.reactionModel.core.species:
+                    if spc.label == label:
+                        spc.thermo = thermo
+                        break
+    
+    def reloadKineticsLibraries(self,reloadedKineticsLibraries):
+        """
+        reloads the kinetic libraries listed in the input and 
+        if kinetics values are different between the current and newly loaded library
+        the new kinetics is assigned to the associated core reaction
+        """
+        for name in reloadedKineticsLibraries:
+            library = self.database.kinetics.libraries[name]
+            oldEntries = library.entries.values()
+            path = os.path.join(settings['database.directory'],'kinetics','libraries')
+            library.load(os.path.join(path,name,'reactions.py'))
+            self.database.kinetics.reloadLibraries(path,reloadedKineticsLibraries)
+            newEntries = self.database.kinetics.libraries[name].entries.values()
+            
+            #need to eliminate identical entries
+            changedEntries = []
+            for oldEntry in oldEntries:
+                for newEntry in newEntries:
+                    if not (oldEntry.label == newEntry.label and oldEntry.kinetics == newEntry.kinetics):
+                        changedEntries.append(newEntry)
+                        
+            for changedEntry in changedEntries:
+                label = changedEntry.label
+                kinetics = changedEntry.data
+                for rxn in self.reactionModel.core.reactions:
+                    if rxn.label == label: 
+                        rxn.kinetics = kinetics
+                        break
+                
     def initialize(self, **kwargs):
         """
         Initialize an RMG job using the command-line arguments `args` as returned
