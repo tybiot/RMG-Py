@@ -203,18 +203,7 @@ class KineticsDatabase(object):
         
         if libraries is not None:
             for library_name in libraries:
-                library_file = os.path.join(path, library_name,'reactions.py')
-                if os.path.exists(library_file):
-                    logging.info('Loading kinetics library {0} from {1}...'.format(library_name, library_file))
-                    library = KineticsLibrary(label=library_name)
-                    library.load(library_file, self.local_context, self.global_context)
-                    self.libraries[library.label] = library
-                else:
-                    if library_name == "KlippensteinH2O2":
-                        logging.info("""\n** Note: The KlippensteinH2O2 library was replaced and is no longer available in RMG.
-For H2 combustion chemistry consider using either the BurkeH2inN2 or BurkeH2inArHe
-library instead, depending on the main bath gas (N2 or Ar/He, respectively)\n""")
-                    raise IOError("Couldn't find kinetics library {0}".format(library_file))
+                self.loadLibrary(self,path,library_name)
             # library order should've been set prior to this, with the given seed mechs and reaction libraries
             assert (len(self.libraryOrder) == len(libraries))
         else:# load all the libraries you can find (this cannot be activated in a normal RMG job.  Only activated when loading the database for other purposes)
@@ -230,7 +219,31 @@ library instead, depending on the main bath gas (N2 or Ar/He, respectively)\n"""
                         library.load(library_file, self.local_context, self.global_context)
                         self.libraries[library.label] = library
                         self.libraryOrder.append((library.label,'Reaction Library'))
+    
+    def loadLibrary(self,path,libraryName):
+        """
+        loads a single kinetics library with name libraryName from path
+        """
+        library_file = os.path.join(path, libraryName,'reactions.py')
+        if os.path.exists(library_file):
+            logging.info('Loading kinetics library {0} from {1}...'.format(libraryName, library_file))
+            library = KineticsLibrary(label=libraryName)
+            library.load(library_file, self.local_context, self.global_context)
+            self.libraries[library.label] = library
+        else:
+            if libraryName == "KlippensteinH2O2":
+                logging.info("""\n** Note: The KlippensteinH2O2 library was replaced and is no longer available in RMG.
+For H2 combustion chemistry consider using either the BurkeH2inN2 or BurkeH2inArHe
+library instead, depending on the main bath gas (N2 or Ar/He, respectively)\n""")
+            raise IOError("Couldn't find kinetics library {0}".format(library_file))
 
+    def reloadLibraries(self,path,libraryNames):
+        """
+        reloads the libraries in libraryNames from path
+        """
+        for libraryName in libraryNames:
+            self.loadLibrary(path,libraryName)
+        
     def save(self, path):
         """
         Save the kinetics database to the given `path` on disk, where `path`
