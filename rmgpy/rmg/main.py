@@ -348,22 +348,15 @@ class RMG(util.Subject):
         if thermo values are different between the current and newly loaded library
         the new thermo is assigned to the associated core species
         """
+        path = os.path.join(settings['database.directory'],'thermo','libraries')
         for name in reloadedThermoLibraries:
-            oldEntries = self.database.thermo.libraries[name].entries.values()
-            path = os.path.join(settings['database.directory'],'thermo','libraries')
-            self.database.thermo.reloadLibraries(path,reloadedThermoLibraries)
-            newEntries = self.database.thermo.libraries[name].entries.values()
             
-            #need to eliminate identical entries
-            changedEntries = []
-            for oldEntry in oldEntries:
-                for newEntry in newEntries:
-                    if not (oldEntry.index == newEntry.index and oldEntry.thermo == newEntry.thermo):
-                        changedEntries.append(newEntry)
-                        
-            for changedEntry in changedEntries:
-                label = changedEntry.label
-                thermo = changedEntry.data
+            self.database.thermo.reloadLibraries(path,reloadedThermoLibraries)
+            entries = self.database.thermo.libraries[name].entries.values()
+            
+            for entry in entries:
+                label = entry.label
+                thermo = entry.data
                 for spc in self.reactionModel.core.species:
                     if spc.label == label:
                         spc.thermo = thermo
@@ -375,24 +368,14 @@ class RMG(util.Subject):
         if kinetics values are different between the current and newly loaded library
         the new kinetics is assigned to the associated core reaction
         """
+        path = os.path.join(settings['database.directory'],'kinetics','libraries')
         for name in reloadedKineticsLibraries:
-            library = self.database.kinetics.libraries[name]
-            oldEntries = library.entries.values()
-            path = os.path.join(settings['database.directory'],'kinetics','libraries')
-            library.load(os.path.join(path,name,'reactions.py'))
             self.database.kinetics.reloadLibraries(path,reloadedKineticsLibraries)
-            newEntries = self.database.kinetics.libraries[name].entries.values()
-            
-            #need to eliminate identical entries
-            changedEntries = []
-            for oldEntry in oldEntries:
-                for newEntry in newEntries:
-                    if not (oldEntry.label == newEntry.label and oldEntry.kinetics == newEntry.kinetics):
-                        changedEntries.append(newEntry)
-                        
-            for changedEntry in changedEntries:
-                label = changedEntry.label
-                kinetics = changedEntry.data
+            entries = self.database.kinetics.libraries[name].entries.values()
+
+            for entry in entries:
+                label = entry.label
+                kinetics = entry.data    
                 for rxn in self.reactionModel.core.reactions:
                     if rxn.label == label: 
                         rxn.kinetics = kinetics
