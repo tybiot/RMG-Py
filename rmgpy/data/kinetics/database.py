@@ -203,7 +203,7 @@ class KineticsDatabase(object):
         
         if libraries is not None:
             for library_name in libraries:
-                self.loadLibrary(self,path,library_name)
+                self.loadLibrary(path,library_name)
             # library order should've been set prior to this, with the given seed mechs and reaction libraries
             assert (len(self.libraryOrder) == len(libraries))
         else:# load all the libraries you can find (this cannot be activated in a normal RMG job.  Only activated when loading the database for other purposes)
