@@ -64,7 +64,9 @@ from model import Species, CoreEdgeReactionModel
 from rmgpy.reaction import Reaction
 from pdep import PDepNetwork
 import rmgpy.util as util
-
+from rmgpy.thermo.nasa import NASA
+from rmgpy.data.thermo import findCp0andCpInf
+from rmgpy.thermo.thermoengine import processThermoData
 from rmgpy.chemkin import ChemkinWriter
 from rmgpy.rmg.output import OutputHTMLWriter
 from rmgpy.rmg.listener import SimulationProfileWriter, SimulationProfilePlotter
@@ -355,33 +357,34 @@ class RMG(util.Subject):
             
             self.database.thermo.reloadLibraries(path,reloadedThermoLibraries)
             entries = self.database.thermo.libraries[name].entries.values()
-            
+
             for entry in entries:
-                label = entry.label
-                thermo = entry.data
+                findCp0andCpInf(entry.item,entry.data)
+                thermo = processThermoData(Species(molecule=[entry.item]),entry.data)
                 for spc in self.reactionModel.core.species:
-                    if spc.label == label:
-                        logging.info('Replacing thermo for {0} during reload with thermo from {1}'.format(spc.label,name))
+                    if spc.isIsomorphic(entry.item):
                         spc.thermo = thermo
+                        logging.info('may have changed thermo for {0} during reload with thermo from {1}'.format(spc.label,name))
                         break
-    
-    def reloadKineticsLibraries(self,reloadedKineticsLibraries):
+                        
+    def reloadReactionLibraries(self,reloadedReactionLibraries):
         """
         reloads the kinetic libraries listed in the input and 
         if kinetics values are different between the current and newly loaded library
         the new kinetics is assigned to the associated core reaction
+        WIP right now
         """
         path = os.path.join(settings['database.directory'],'kinetics','libraries')
-        for name in reloadedKineticsLibraries:
-            self.database.kinetics.reloadLibraries(path,reloadedKineticsLibraries)
+        for name in reloadedReactionLibraries:
+            self.database.kinetics.reloadLibraries(path,reloadedReactionLibraries)
             entries = self.database.kinetics.libraries[name].entries.values()
 
             for entry in entries:
-                label = entry.label
-                kinetics = entry.data    
+                kinetics = entry.data 
                 for rxn in self.reactionModel.core.reactions:
-                    if rxn.label == label: 
-                        logging.info('Replacing kinetics for {0} during reload with kinetics from {1}'.format(str(rxn),name))
+                    #doesn't check for duplicate/Multi TS yet
+                    if rxn.isIsomorphic(entry.item): 
+                        logging.info('may have changed kinetics for {0} during reload with kinetics from {1}'.format(str(rxn),name))
                         rxn.kinetics = kinetics
                         break
                 
@@ -649,6 +652,9 @@ class RMG(util.Subject):
                 allTerminated = True
                 numCoreSpecies = len(self.reactionModel.core.species)
                 notResurrectedVec = [True for i in xrange(len(self.reactionSystems))]
+                
+                self.reloadThermoLibraries(self.reloadedThermoLibraries)
+                #self.reloadReactionLibraries(self.reloadedReactionLibraries)
                 
                 for index, reactionSystem in enumerate(self.reactionSystems):
                     self.reactionSystem = reactionSystem
