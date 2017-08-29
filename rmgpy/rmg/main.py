@@ -359,6 +359,7 @@ class RMG(util.Subject):
                 thermo = entry.data
                 for spc in self.reactionModel.core.species:
                     if spc.label == label:
+                        logging.info('Replacing thermo for {0} during reload with thermo from {1}'.format(spc.label,name))
                         spc.thermo = thermo
                         break
     
@@ -378,6 +379,7 @@ class RMG(util.Subject):
                 kinetics = entry.data    
                 for rxn in self.reactionModel.core.reactions:
                     if rxn.label == label: 
+                        logging.info('Replacing kinetics for {0} during reload with kinetics from {1}'.format(str(rxn),name))
                         rxn.kinetics = kinetics
                         break
                 
