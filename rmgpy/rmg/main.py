@@ -147,8 +147,10 @@ class RMG(util.Subject):
         """
         self.databaseDirectory = None
         self.thermoLibraries = None
+        self.reloadedThermoLibraries = None
         self.transportLibraries = None
         self.reactionLibraries = None
+        self.reloadedReactionLibraries = None
         self.statmechLibraries = None
         self.seedMechanisms = None
         self.kineticsFamilies = None
