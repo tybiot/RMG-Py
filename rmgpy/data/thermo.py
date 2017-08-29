@@ -810,7 +810,7 @@ class ThermoDatabase(object):
         reloads the libraries in libraryNames from path
         """
         for libraryName in libraryNames:
-            self.loadLibrary(path,libraryNames)
+            self.loadLibrary(path,libraryName)
         
     def loadGroups(self, path):
         """
