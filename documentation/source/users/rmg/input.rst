@@ -481,6 +481,35 @@ For example ::
 		toleranceMoveSurfaceReactionToCore=5.0,
 	)
 
+Advanced Setting:  Dynamics Criterion Weights
+---------------------------------------------
+In reaction networks reactions that change the number of radicals tend to be much more important
+than other reactions.  Also in many cases specific species within a model are of interest.  
+
+In these sorts of situations RMG implements two different types of weights:
+Reaction Weights: multiplied by the dynamics number for a given reaction at the end of calculations
+Species Weights: multiplied by the contribution of a given species to every dynamics number
+
+The only reaction weights supported are based on the change in the number of radicals, which, can 
+be adjusted by assigning radicalChangeWeight where the weight is calculated W_rxn = exp(radicalChangeWeight*dr) 
+where dr is the change in the number of radicals induced by that reaction.  
+
+Species weights can be assigned directly by declaring them in the input file and mapping their labels
+to weights in a dictionary assigned to speciesWeights.  One can also use/add the flux based rate ratios
+as species weights by setting useFluxRatioInWeights=True.  
+
+For example ::
+
+	model(
+		toleranceMoveToCore=0.1,
+		toleranceInterruptSimulation=0.1,
+		toleranceMoveEdgeReactionToCore=30.0,
+		toleranceMoveEdgeReactionToCoreInterrupt=5.0,
+        useFluxRatioInWeights=True,
+        speciesWeights={'ethane':5.0},
+        radicalChangeWeight=1.0,
+	)
+
 On the fly Quantum Calculations
 ===============================
 
