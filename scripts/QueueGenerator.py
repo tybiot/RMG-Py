@@ -311,7 +311,7 @@ class ThermoQueueEntry(QueueEntry):
                 'Uncertainty':self.uncertainty,
                 'Sensitivity':self.sensitivity,
                 'Value':self.value,
-                'Status':'waiting'}
+                }
         
 if __name__ == "__main__":
     
