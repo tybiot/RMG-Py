@@ -134,15 +134,12 @@ def findCloseParen(wtxt,ind):
             b += 1
     return ind
 
-def getSens(runDir):
+def getSens(runDir,inputFile):
     """
     calculates sensitivities, returns a list of sensitivity values in 
     species order
     thermo sensitivity values are in 1/(kcal/mol)
     """
-    
-    inputFile = os.path.join(runDir,'input.py')
-    inputFile = os.path.join(runDir,makeSensInputFile(inputFile))
     
     chemDir = os.path.join(runDir,'chemkin')
     chemkinFile = os.path.join(chemDir,'chem_annotated.inp')
@@ -179,7 +176,7 @@ def getSens(runDir):
                 
     return thermoSens
 
-def getUncertainties(runDir):
+def getUncertainties(runDir,thermoLibraries,reactionLibraries):
     """
     Calculates uncertainties, returns a list of uncertainty values in 
     species order
@@ -197,7 +194,7 @@ def getUncertainties(runDir):
     
     uncertainty = Uncertainty(outputDirectory='UncertaintyDir')
     uncertainty.loadModel(chemkinFile, spcDict)
-    uncertainty.loadDatabase()
+    uncertainty.loadDatabase(thermoLibraries=thermoLibraries,reactionLibraries=reactionLibraries)
     uncertainty.extractSourcesFromModel()
     uncertainty.compileAllSources()
     uncertainty.assignParameterUncertainties()
@@ -216,6 +213,43 @@ def getSpcs(runDir):
     spcDict = os.path.join(chemDir,'species_dictionary.txt')
     species,reactions = loadChemkinFile(chemkinFile,spcDict)
     return species
+
+def getLibraries(inputFile):
+    """
+    retrieves the thermo and kinetics library names from the input file
+    """
+    f = open(inputFile,'rb')
+    txt = f.readlines()
+    thermoLibs = []
+    kineticsLibs = []
+    txt = [line for line in txt]
+    for ind,line in enumerate(txt):
+        if 'thermoLibraries' in line:
+            try:
+                i = ind
+                line = line.split('=')[1][:-1].split('#')[0]
+                while line.count(']') == 0:
+                    i = i + 1
+                    line += txt[i].split('#')[0]
+                thermoLibs = eval(line[:-1])[0]
+            except:
+                pass
+        
+        if 'reactionLibraries' in line:
+            try:
+                i = ind
+                line = line.split('=')[1][:-1].split('#')[0]
+                while line.count(']') == 0:
+                    i = i + 1
+                    line += txt[i].split('#')[0]
+                kineticsLibs = eval(line[:-1])[0]
+            except:
+                pass
+            
+        if kineticsLibs != [] and thermoLibs != []:
+            break
+    
+    return thermoLibs,kineticsLibs
 
 class QueueEntry(object):
     
@@ -282,25 +316,25 @@ class ThermoQueueEntry(QueueEntry):
 if __name__ == "__main__":
     
     while True:
-        try:
-            species = getSpcs(runDir)
-            thermoUnc = getUncertainties(runDir)
-        except:
-            continue
         
-        try:
-            thermoSens = getSens(runDir)
-        except:
-            continue
+        inputFile = os.path.join(runDir,'input.py')
+        inputFile = os.path.join(runDir,makeSensInputFile(inputFile))
+        
+        species = getSpcs(runDir)
+        thermoLibraries,reactionLibraries = getLibraries(inputFile)
+        
+        thermoUnc = getUncertainties(runDir,thermoLibraries,reactionLibraries)
+
+        thermoSens = getSens(runDir,inputFile)
+        
+        thermoUnc = thermoUnc[4:]
+        species = species[4:]
                 
         queue = []
         
-        try:
-            for i in xrange(len(thermoSens)):
-                queue.append(ThermoQueueEntry(species[i],thermoSens[i],thermoUnc[i]))
-        except:
-            logging.warn('likely species sensitivities and uncertainties didnt have the same length')
-            continue
+        for i in xrange(len(thermoSens)):
+            queue.append(ThermoQueueEntry(species[i],thermoSens[i],thermoUnc[i]))
+
         
         sortedQueue = sorted(queue)[::-1]
                 
