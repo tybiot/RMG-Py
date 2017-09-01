@@ -251,6 +251,8 @@ def getLibraries(inputFile):
     
     return thermoLibs,kineticsLibs
 
+R = 1.987e-3 #kcal/K
+
 class QueueEntry(object):
     
     def __init__(self,value):
@@ -274,7 +276,7 @@ class ThermoQueueEntry(QueueEntry):
         self.label = str(spc)
         self.sensitivity = sensitivity
         self.uncertainty = uncertainty
-        QueueEntry.__init__(self,sensitivity*uncertainty)
+        QueueEntry.__init__(self,sensitivity*np.exp(uncertainty/(R*300.0)))
     
     def __str__(self):
         spc = self.spc
