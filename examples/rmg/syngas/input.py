@@ -42,26 +42,10 @@ species(
 )
     
 species(
-    label='CH4',
-    reactive=True,		#this parameter is optional if true
-    structure=SMILES("C"),
-)
-species(
     label='H2',
     reactive=True,
     structure=SMILES("[H][H]"),
 )
-
-species(
-        label='CO2',
-        reactive=True,
-        structure=SMILES("O=C=O")
-        )
-species(
-        label='H2O',
-        reactive=True,
-        structure=SMILES("O")
-        )
 
 #Reaction systems
 #currently RMG models only constant temperature and pressure as homogeneous batch reactors.  
@@ -75,59 +59,12 @@ simpleReactor(
 	#list initial mole fractions of compounds using the label from the 'species' label.  
 	#RMG will normalize if sum/=1
     initialMoleFractions={
-        "CO": 1,
-        "H2": 1,
-        "CH4": 1.0/15.0,
-        "CO2" : 1.0/5.0,
-        "H2O" : .5,
-        
+        "CO": .6,
+        "H2": .4,
     },
 	#the following two values specify when to determine the final output model
 	#only one must be specified
 	#the first condition to be satisfied will terminate the process
-    terminationTime=(12,'s'),
-)
-
-simpleReactor(
-	#specifies reaction temperature with units
-    temperature=(680,'K'),
-	#specifies reaction pressure with units
-    pressure=(1.0,'bar'),
-	#list initial mole fractions of compounds using the label from the 'species' label.  
-	#RMG will normalize if sum/=1
-    initialMoleFractions={
-        "CO": 2,
-        "H2": 1,
-        "CH4": 1.0/15.0,
-        "CO2" : 1.0/5.0,
-        "H2O" : .5,
-        
-    },
-	#the following two values specify when to determine the final output model
-	#only one must be specified
-	#the first condition to be satisfied will terminate the process
-
-    terminationTime=(12,'s'),
-)
-simpleReactor(
-	#specifies reaction temperature with units
-    temperature=(800,'K'),
-	#specifies reaction pressure with units
-    pressure=(1.0,'bar'),
-	#list initial mole fractions of compounds using the label from the 'species' label.  
-	#RMG will normalize if sum/=1
-    initialMoleFractions={
-        "CO": 1,
-        "H2": 1,
-        "CH4": 1.0/15.0,
-        "CO2" : 1.0/5.0,
-        "H2O" : .5,
-        
-    },
-	#the following two values specify when to determine the final output model
-	#only one must be specified
-	#the first condition to be satisfied will terminate the process
-
     terminationTime=(12,'s'),
 )
 
@@ -139,12 +76,8 @@ simpleReactor(
 	#list initial mole fractions of compounds using the label from the 'species' label.  
 	#RMG will normalize if sum/=1
     initialMoleFractions={
-        "CO": 2,
-        "H2": 1,
-        "CH4": 1.0/15.0,
-        "CO2" : 1.0/5.0,
-        "H2O" : .5,
-        
+        "CO": .6,
+        "H2": .4,
     },
 	#the following two values specify when to determine the final output model
 	#only one must be specified
@@ -161,34 +94,8 @@ simpleReactor(
 	#list initial mole fractions of compounds using the label from the 'species' label.  
 	#RMG will normalize if sum/=1
     initialMoleFractions={
-        "CO": 1,
-        "H2": 1,
-        "CH4": 1.0/15.0,
-        "CO2" : 1.0/5.0,
-        "H2O" : .5,
-        
-    },
-	#the following two values specify when to determine the final output model
-	#only one must be specified
-	#the first condition to be satisfied will terminate the process
-
-    terminationTime=(12,'s'),
-)
-
-simpleReactor(
-	#specifies reaction temperature with units
-    temperature=(1100,'K'),
-	#specifies reaction pressure with units
-    pressure=(1.0,'bar'),
-	#list initial mole fractions of compounds using the label from the 'species' label.  
-	#RMG will normalize if sum/=1
-    initialMoleFractions={
-        "CO": 2,
-        "H2": 1,
-        "CH4": 1.0/15.0,
-        "CO2" : 1.0/5.0,
-        "H2O" : .5,
-        
+        "CO": .6,
+        "H2": .4,
     },
 	#the following two values specify when to determine the final output model
 	#only one must be specified
@@ -205,59 +112,12 @@ simpleReactor(
 	#list initial mole fractions of compounds using the label from the 'species' label.  
 	#RMG will normalize if sum/=1
     initialMoleFractions={
-        "CO": 1,
-        "H2": 1,
-        "CH4": 1.0/15.0,
-        "CO2" : 1.0/5.0,
-        "H2O" : .5,
-        
+        "CO": .6,
+        "H2": .4,
     },
 	#the following two values specify when to determine the final output model
 	#only one must be specified
 	#the first condition to be satisfied will terminate the process
-    terminationTime=(12,'s'),
-)
-
-simpleReactor(
-	#specifies reaction temperature with units
-    temperature=(680,'K'),
-	#specifies reaction pressure with units
-    pressure=(10.0,'bar'),
-	#list initial mole fractions of compounds using the label from the 'species' label.  
-	#RMG will normalize if sum/=1
-    initialMoleFractions={
-        "CO": 2,
-        "H2": 1,
-        "CH4": 1.0/15.0,
-        "CO2" : 1.0/5.0,
-        "H2O" : .5,
-        
-    },
-	#the following two values specify when to determine the final output model
-	#only one must be specified
-	#the first condition to be satisfied will terminate the process
-
-    terminationTime=(12,'s'),
-)
-simpleReactor(
-	#specifies reaction temperature with units
-    temperature=(800,'K'),
-	#specifies reaction pressure with units
-    pressure=(10.0,'bar'),
-	#list initial mole fractions of compounds using the label from the 'species' label.  
-	#RMG will normalize if sum/=1
-    initialMoleFractions={
-        "CO": 1,
-        "H2": 1,
-        "CH4": 1.0/15.0,
-        "CO2" : 1.0/5.0,
-        "H2O" : .5,
-        
-    },
-	#the following two values specify when to determine the final output model
-	#only one must be specified
-	#the first condition to be satisfied will terminate the process
-
     terminationTime=(12,'s'),
 )
 
@@ -269,12 +129,8 @@ simpleReactor(
 	#list initial mole fractions of compounds using the label from the 'species' label.  
 	#RMG will normalize if sum/=1
     initialMoleFractions={
-        "CO": 2,
-        "H2": 1,
-        "CH4": 1.0/15.0,
-        "CO2" : 1.0/5.0,
-        "H2O" : .5,
-        
+        "CO": .6,
+        "H2": .4,
     },
 	#the following two values specify when to determine the final output model
 	#only one must be specified
@@ -291,34 +147,8 @@ simpleReactor(
 	#list initial mole fractions of compounds using the label from the 'species' label.  
 	#RMG will normalize if sum/=1
     initialMoleFractions={
-        "CO": 1,
-        "H2": 1,
-        "CH4": 1.0/15.0,
-        "CO2" : 1.0/5.0,
-        "H2O" : .5,
-        
-    },
-	#the following two values specify when to determine the final output model
-	#only one must be specified
-	#the first condition to be satisfied will terminate the process
-
-    terminationTime=(12,'s'),
-)
-
-simpleReactor(
-	#specifies reaction temperature with units
-    temperature=(1100,'K'),
-	#specifies reaction pressure with units
-    pressure=(10.0,'bar'),
-	#list initial mole fractions of compounds using the label from the 'species' label.  
-	#RMG will normalize if sum/=1
-    initialMoleFractions={
-        "CO": 2,
-        "H2": 1,
-        "CH4": 1.0/15.0,
-        "CO2" : 1.0/5.0,
-        "H2O" : .5,
-        
+        "CO": .6,
+        "H2": .4,
     },
 	#the following two values specify when to determine the final output model
 	#only one must be specified
@@ -335,16 +165,48 @@ simpleReactor(
 	#list initial mole fractions of compounds using the label from the 'species' label.  
 	#RMG will normalize if sum/=1
     initialMoleFractions={
-        "CO": 1,
-        "H2": 1,
-        "CH4": 1.0/15.0,
-        "CO2" : 1.0/5.0,
-        "H2O" : .5,
-        
+        "CO": .6,
+        "H2": .4,
     },
 	#the following two values specify when to determine the final output model
 	#only one must be specified
 	#the first condition to be satisfied will terminate the process
+    terminationTime=(12,'s'),
+)
+
+simpleReactor(
+	#specifies reaction temperature with units
+    temperature=(800,'K'),
+	#specifies reaction pressure with units
+    pressure=(100.0,'bar'),
+	#list initial mole fractions of compounds using the label from the 'species' label.  
+	#RMG will normalize if sum/=1
+    initialMoleFractions={
+        "CO": .6,
+        "H2": .4,
+    },
+	#the following two values specify when to determine the final output model
+	#only one must be specified
+	#the first condition to be satisfied will terminate the process
+
+    terminationTime=(12,'s'),
+)
+
+simpleReactor(
+	#specifies reaction temperature with units
+    temperature=(1100,'K'),
+	#specifies reaction pressure with units
+    pressure=(100.0,'bar'),
+	#list initial mole fractions of compounds using the label from the 'species' label.  
+	#RMG will normalize if sum/=1
+    initialMoleFractions={
+        "CO": .6,
+        "H2": .4,
+    },
+	#the following two values specify when to determine the final output model
+	#only one must be specified
+	#the first condition to be satisfied will terminate the process
+
     terminationTime=(12,'s'),
 )
 
@@ -352,42 +214,16 @@ simpleReactor(
 	#specifies reaction temperature with units
     temperature=(680,'K'),
 	#specifies reaction pressure with units
-    pressure=(100.0,'bar'),
+    pressure=(0.1,'bar'),
 	#list initial mole fractions of compounds using the label from the 'species' label.  
 	#RMG will normalize if sum/=1
     initialMoleFractions={
-        "CO": 2,
-        "H2": 1,
-        "CH4": 1.0/15.0,
-        "CO2" : 1.0/5.0,
-        "H2O" : .5,
-        
+        "CO": .6,
+        "H2": .4,
     },
 	#the following two values specify when to determine the final output model
 	#only one must be specified
 	#the first condition to be satisfied will terminate the process
-
-    terminationTime=(12,'s'),
-)
-simpleReactor(
-	#specifies reaction temperature with units
-    temperature=(800,'K'),
-	#specifies reaction pressure with units
-    pressure=(100.0,'bar'),
-	#list initial mole fractions of compounds using the label from the 'species' label.  
-	#RMG will normalize if sum/=1
-    initialMoleFractions={
-        "CO": 1,
-        "H2": 1,
-        "CH4": 1.0/15.0,
-        "CO2" : 1.0/5.0,
-        "H2O" : .5,
-        
-    },
-	#the following two values specify when to determine the final output model
-	#only one must be specified
-	#the first condition to be satisfied will terminate the process
-
     terminationTime=(12,'s'),
 )
 
@@ -395,16 +231,12 @@ simpleReactor(
 	#specifies reaction temperature with units
     temperature=(800,'K'),
 	#specifies reaction pressure with units
-    pressure=(100.0,'bar'),
+    pressure=(0.1,'bar'),
 	#list initial mole fractions of compounds using the label from the 'species' label.  
 	#RMG will normalize if sum/=1
     initialMoleFractions={
-        "CO": 2,
-        "H2": 1,
-        "CH4": 1.0/15.0,
-        "CO2" : 1.0/5.0,
-        "H2O" : .5,
-        
+        "CO": .6,
+        "H2": .4,
     },
 	#the following two values specify when to determine the final output model
 	#only one must be specified
@@ -417,16 +249,12 @@ simpleReactor(
 	#specifies reaction temperature with units
     temperature=(1100,'K'),
 	#specifies reaction pressure with units
-    pressure=(100.0,'bar'),
+    pressure=(0.1,'bar'),
 	#list initial mole fractions of compounds using the label from the 'species' label.  
 	#RMG will normalize if sum/=1
     initialMoleFractions={
-        "CO": 1,
-        "H2": 1,
-        "CH4": 1.0/15.0,
-        "CO2" : 1.0/5.0,
-        "H2O" : .5,
-        
+        "CO": .6,
+        "H2": .4,
     },
 	#the following two values specify when to determine the final output model
 	#only one must be specified
@@ -435,27 +263,6 @@ simpleReactor(
     terminationTime=(12,'s'),
 )
 
-simpleReactor(
-	#specifies reaction temperature with units
-    temperature=(1100,'K'),
-	#specifies reaction pressure with units
-    pressure=(100.0,'bar'),
-	#list initial mole fractions of compounds using the label from the 'species' label.  
-	#RMG will normalize if sum/=1
-    initialMoleFractions={
-        "CO": 2,
-        "H2": 1,
-        "CH4": 1.0/15.0,
-        "CO2" : 1.0/5.0,
-        "H2O" : .5,
-        
-    },
-	#the following two values specify when to determine the final output model
-	#only one must be specified
-	#the first condition to be satisfied will terminate the process
-
-    terminationTime=(12,'s'),
-)
 #determines absolute and relative tolerances for ODE solver and sensitivities.
 #normally this doesn't cause many issues and is modified after other issues are
 #ruled out
@@ -472,7 +279,7 @@ model(
 	#determines the relative flux to put a species into the core.  
 	#A smaller value will result in a larger, more complex model
 	#when running a new model, it is recommended to start with higher values and then decrease to converge on the model
-    toleranceMoveToCore=0.05,
+    toleranceMoveToCore=0.01,
     #comment out the next three terms to disable pruning
 	   #determines the relative flux needed to not remove species from the model.  
 	   #Lower values will keep more species and utilize more memory
@@ -480,7 +287,7 @@ model(
 	   #determines when to stop a ODE run to add a species.  
 	   #Lower values will improve speed. 
 	   #if it is too low, may never get to the end simulation to prune species.  
-    toleranceInterruptSimulation=0.05,
+    toleranceInterruptSimulation=0.01,
 	   #number of edge species needed to accumulate before pruning occurs
 	   #larger values require more memory and will prune less often
     maximumEdgeSpecies=100000,
