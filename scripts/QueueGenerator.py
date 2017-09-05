@@ -293,21 +293,13 @@ class ThermoQueueEntry(QueueEntry):
     
     def toDict(self):
         smiles = self.spc.molecule[0].toSMILES()
-        try:
-            auginchi = self.spc.generate_aug_inchi()
-        except:
-            logging.warn('Augmented inchi generation through rdkit for species with smiles {0} has failed'.format(smiles))
-            try:
-                inchi = self.spc.molecule[0].toInChI()
-                auginchi = inchi+'/u'+str(self.spc.molecule[0].multiplicity)
-                logging.warn('generated new augmented inchi is {0}'.format(auginchi))
-            except:
-                logging.warn('regular inchi could not be generated for species {0}'.format(smiles))
-                logging.warn('secondary augmented inchi generation failed for species {0}'.format(smiles))
-                auginchi = ''
+        inchi = self.spc.molecule[0].toInChI()
+        extendedinchi = inchi+'/u'+str(self.spc.molecule[0].multiplicity)
             
         return {'name':self.spc.label,
-                'AugInChI':auginchi,
+                'ExtendedInchi':extendedinchi,
+                'InChi':inchi,
+                'multiplicity':self.spc.molecule[0].multiplicity,
                 'SMILES': smiles,
                 'AdjList':self.spc.toAdjacencyList(),
                 'Uncertainty':self.uncertainty,
