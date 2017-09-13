@@ -94,7 +94,8 @@ def initializeIsotopeModel(rmg, isotopes):
     rmg.reactionModel.initializeIndexSpeciesDict()
 
 
-def generateIsotopeModel(outputDirectory, rmg0, isotopes, useOriginalReactions = False):
+def generateIsotopeModel(outputDirectory, rmg0, isotopes, useOriginalReactions = False,
+                         kineticIsotopeEffect = None):
     """
     Replace the core species of the rmg model with the parameter list
     of species.
@@ -141,6 +142,14 @@ def generateIsotopeModel(outputDirectory, rmg0, isotopes, useOriginalReactions =
     if not consistent:
         logging.warning("isotope: non-consistent degeneracy and/or symmetry was detected. This may lead to unrealistic deviations in enrichment. check log for more details")
 
+    if kineticIsotopeEffect:
+        logging.info('isotope: modifying reaction rates using kinetic isotope effect method "{0}"'.format(kineticIsotopeEffect))
+        if kineticIsotopeEffect == 'simple':
+            applyKineticIsotopeEffectSimple(clusters,rmg.database.kinetics)
+        else:
+            logging.warning('isotope: kinetic isotope effect {0} is not supported. skipping adding kinetic isotope effects.')
+    else:
+        logging.info('isotope: not adding kinetic isotope effects since no method was supplied.')
     logging.info("isotope: saving files")
     rmg.saveEverything()
 
@@ -511,6 +520,111 @@ def correctEntropy(isotopomer, isotopeless):
     # put the corrected thermo back as a species attribute:
     isotopomer.thermo = nasa
 
+def applyKineticIsotopeEffectSimple(rxn_clusters, kinetics_database):
+    """
+    This method modifies reaction rates in place for the implementation of
+    kinetic isotope effects using method 'simple', which is described in the
+    publication: Goldman, MJ, Vandewiele, NM, Ono, S, Green WH [in preparation]
+
+    input:
+            rxn_clusters - list of list of reactions obtained from `cluster`
+            kinetics_database - KineticsDatabase object for finding atom labels
+    output:
+            None (clusters are modified in place)
+
+    This method has a number of dependent methods, which appear at the start of
+    this method
+    """
+    def get_labeled_reactants(reaction, family):
+        """
+        Returns a list of labeled molecule objects given a species-based reaction object and it's
+        corresponding kinetic family
+        """
+        assert reaction.family == family.name, "{0} != {1}".format(reaction.family, family.name)
+        reactant_pairs = list(itertools.product(*[s.molecule for s in reaction.reactants]))
+        product_pairs = list(itertools.product(*[s.molecule for s in reaction.products]))
+        labeled_reactants = None
+        for reactant_pair, product_pair in itertools.product(reactant_pairs, product_pairs):
+            try:
+                labeled_reactants, __ = family.getLabeledReactantsAndProducts(reactant_pair, product_pair)
+                if labeled_reactants is not None:
+                    break
+            except Exception as e:
+                pass
+        if labeled_reactants is None:
+            raise Exception("could not find labeled reactants for reaction {}".format(reaction))
+        return labeled_reactants
+
+    def get_reduced_mass(labeled_molecules, labels, three_member_ts):
+        """
+        Returns the reduced mass of the labeled elements
+        within the labeled molecules. Used for kinetic isotope effect.
+        The equations are based on Melander & Saunders, Reaction rate of isotopic molecules, 1980
+
+        input: labeled_molecules - list of molecules with labels for the reaction
+               labels - list of strings to search for labels in the product
+               three_member_ts - boolean describing number of atoms in transition state
+                                 If True, reactions involving the movement of hydrogen between
+                                 two carbons is used. The labels should not include the hydrogen atom
+                                 If False, only a 2 member transition state is used.
+        output: float
+        """
+        reduced_mass = 0.
+        for labeled_mol in labeled_molecules:
+            for atom in labeled_mol.atoms:
+                if any([atom.label == label for label in labels]):
+                    #print 'found atom with label "{}"'.format(atom.label)
+                    if three_member_ts:
+                        reduced_mass += atom.element.mass
+                    else:
+                        reduced_mass += 1./atom.element.mass
+        if reduced_mass == 0.:
+            from rmgpy.exceptions import KineticsError
+            raise KineticsError("Did not find a labeled atom in molecules {}".format([mol.toAdjacencyList() for mol in labeled_molecules]))
+        if three_member_ts: # actually convert to reduced mass using the mass of hydrogen
+            from rmgpy.molecule import element
+            reduced_mass = 1/element.H.mass + 1/reduced_mass
+        return reduced_mass
+
+    # now for the start of applyKineticIsotopeEffectSimple
+    for index, cluster in enumerate(rxn_clusters):
+        # hardcoded family values determine what type of transition state
+        # approximation is used.
+        family = kinetics_database.families[cluster[0].family]
+        if cluster[0].family.lower() == 'r_recombination':
+            labels = ['*']
+            three_member_ts = False
+        elif cluster[0].family.lower() == 'r_addition_multiplebond':
+            labels = ['*1','*3']
+            three_member_ts = False
+        elif cluster[0].family.lower() == 'intra_r_add_endocyclic':
+            labels = ['*1','*3']
+            three_member_ts = False
+        elif cluster[0].family.lower() == 'intra_r_add_exocyclic':
+            labels = ['*1','*2']
+            three_member_ts = False
+        elif cluster[0].family.lower() == 'h_abstraction':
+            labels = ['*1','*3']
+            three_member_ts = True
+        elif cluster[0].family.lower() == 'intra_h_migration':
+            labels = ['*1','*2']
+            three_member_ts = True
+        elif cluster[0].family.lower() == 'disproportionation':
+            labels = ['*1','*2']
+            three_member_ts = True
+        else:
+            logging.warning('isotope: kinetic isotope effect of family {0} not encoded into RMG. Ignoring KIE of reaction {1}'.format(cluster[0].family, cluster[-1]))
+            continue
+        logging.debug('modifying reaction rate for cluster {0} for family {1}'.format(index,family.name))
+        # get base reduced mass
+        reaction = cluster[-1] # set unlabeled reaction as the standard to compare
+        labeled_reactants = get_labeled_reactants(reaction,family)
+        base_reduced_mass = get_reduced_mass(labeled_reactants, labels,three_member_ts)
+        for reaction in cluster[:-1]:
+            labeled_reactants = get_labeled_reactants(reaction,family)
+            reduced_mass = get_reduced_mass(labeled_reactants, labels, three_member_ts)
+            reaction.kinetics.changeRate(math.sqrt(reduced_mass/base_reduced_mass))
+
 def isEnriched(obj):
     """
     Returns True if the species or reaction object has any enriched isotopes.
@@ -694,7 +808,8 @@ def ensure_correct_degeneracies(reaction_isotopomer_list, print_data = False, r_
     return all(pass_species)
 
 def run(inputFile, outputDir, original=None, maximumIsotopicAtoms = 1,
-                            useOriginalReactions = False):
+                            useOriginalReactions = False,
+                            kineticIsotopeEffects = None):
     """
     Accepts one input file with the RMG-Py model to generate.
 
@@ -738,4 +853,4 @@ def run(inputFile, outputDir, original=None, maximumIsotopicAtoms = 1,
     os.mkdir(outputdirIso)
 
     logging.info('isotope: Generating RMG isotope model in {}'.format(outputdirIso))
-    generateIsotopeModel(outputdirIso, rmg, isotopes, useOriginalReactions = useOriginalReactions)
+    generateIsotopeModel(outputdirIso, rmg, isotopes, useOriginalReactions = useOriginalReactions, kineticIsotopeEffects = kineticIsotopeEffects)
