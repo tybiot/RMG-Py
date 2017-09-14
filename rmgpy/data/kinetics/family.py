@@ -2166,7 +2166,9 @@ class KineticsFamily(Database):
                                     re.sub(r"(?<=]) \+ (?!Average)", ",'",      # + sign between average and non-average
                                     re.sub(r"(?<!]) \+ (?!Average)", "','",     # + sign between non-averages
                                     comment)))))))
-
+            
+                evalCommentString = evalCommentString.replace("),",")',")
+            
                 entryNestedList = eval(evalCommentString)
                 
                 weightedEntries = assignWeightsToEntries(entryNestedList, [])
