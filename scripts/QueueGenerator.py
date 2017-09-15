@@ -225,27 +225,28 @@ def getLibraries(inputFile):
     txt = [line for line in txt]
     for ind,line in enumerate(txt):
         if 'thermoLibraries' in line:
-            try:
-                i = ind
-                line = line.split('=')[1][:-1].split('#')[0]
-                while line.count(']') == 0:
-                    i = i + 1
-                    line += txt[i].split('#')[0]
-                thermoLibs = eval(line[:-1])[0]
-            except:
-                pass
-        
-        if 'reactionLibraries' in line:
-            try:
-                i = ind
-                line = line.split('=')[1][:-1].split('#')[0]
-                while line.count(']') == 0:
-                    i = i + 1
-                    line += txt[i].split('#')[0]
-                kineticsLibs = eval(line[:-1])[0]
-            except:
-                pass
+            assert not '#' in line, 'cannot have comments in thermoLibraries line'
             
+            evalstr = line.split('=')[1].strip()
+            
+            thermoLibs = eval(evalstr)[0]
+            
+            for i in xrange(len(thermoLibs)):
+                if type(thermoLibs[i]) == tuple:
+                    thermoLibs[i] = thermoLibs[i][0]
+            
+                
+        if 'reactionLibraries' in line:
+            assert not '#' in line, 'cannot have comments in reactionLibraries line'
+            
+            evalstr = line.split('=')[1].strip()
+            
+            kineticsLibs = eval(evalstr)[0]
+            
+            for i in xrange(len(kineticsLibs)):
+                if type(kineticsLibs[i]) == tuple:
+                    kineticsLibs[i] = kineticsLibs[i][0]
+                
         if kineticsLibs != [] and thermoLibs != []:
             break
     
