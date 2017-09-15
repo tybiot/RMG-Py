@@ -157,7 +157,8 @@ def getSens(runDir,inputFile):
     
     thermoDataList = [d for d in dataList if 'dG[' in d.label]
     #rxnDataList = list(set(dataList)-set(thermoDataList))
-        
+    thermoLabels = [d.label.split('dG[')[1][:-1] for d in dataList if 'dG[' in d.label]
+    
     thermoSens = [reduceData(d) for d in thermoDataList]
     
     #all other reactors
@@ -174,7 +175,7 @@ def getSens(runDir,inputFile):
             if thermoSens[i] < tempSens[i]:
                 thermoSens[i] = tempSens[i]
                 
-    return thermoSens
+    return thermoSens,thermoLabels
 
 def getUncertainties(runDir,thermoLibraries,reactionLibraries):
     """
@@ -316,17 +317,27 @@ if __name__ == "__main__":
         inputFile = os.path.join(runDir,makeSensInputFile(inputFile))
         
         species = getSpcs(runDir)
+        
+        species = [spc for spc in species if spc.reactive == True]
+        
+        logging.error([s.label for s in species])
         thermoLibraries,reactionLibraries = getLibraries(inputFile)
         
         thermoUnc = getUncertainties(runDir,thermoLibraries,reactionLibraries)
 
-        thermoSens = getSens(runDir,inputFile)
+        thermoSens,thermoLabels = getSens(runDir,inputFile)
         
-        thermoUnc = thermoUnc[4:]
-        species = species[4:]
+        logging.error(thermoLabels)
+        
+        thermoUnc = thermoUnc[len(thermoUnc)-len(species):]
                 
         queue = []
         
+        logging.error('sens: {0}'.format(len(thermoSens)))
+        logging.error('unc: {0}'.format(len(thermoUnc)))
+        logging.error('spcs: {0}'.format(len(species)))
+        assert len(thermoUnc) == len(thermoSens)
+        assert len(species) == len(thermoSens)
         for i in xrange(len(thermoSens)):
             queue.append(ThermoQueueEntry(species[i],thermoSens[i],thermoUnc[i]))
 
