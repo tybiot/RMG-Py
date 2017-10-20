@@ -4,10 +4,12 @@
 Isotopes
 ********
 
-Isotopic enrichment can be indicated in a molecular structure's adjacency list. 
-The example below is methane with an isotopically labeled carbon of isotope number 
-13, which is indicated with ``i13``::
+Describing isotopes in adjacency lists
+--------------------------------------
 
+Isotopic enrichment can be indicated in a molecular structure's adjacency list. 
+The example below is methane with an isotopically labeled carbon of isotope 
+number 13, which is indicated with ``i13``::
 
     1 C u0 p0 c0 i13 {2,S} {3,S} {4,S} {5,S}
     2 H u0 p0 c0 {1,S}
@@ -15,47 +17,66 @@ The example below is methane with an isotopically labeled carbon of isotope numb
     4 H u0 p0 c0 {1,S}
     5 H u0 p0 c0 {1,S}
 
-The less resource intensive isotope generation algorithm involves a two step process. 
-A model without any isotopes is generated, and then it is used to create a model with 
-isotopes by labeling all molecules and then generating reactions between species. 
-This requires two input files. The first one is a standard RMG input file without 
-isotopes. The second input file can contain an optional parameter `maximumIsotopicAtoms` 
-in the `options` block. This limits how many isotopic labels can exist in one 
-molecule, and can reduce the model size complexity. 
 
-The algorithm can be run with the command::
+Running the RMG isotopes algorithm
+----------------------------------
 
-    python \$rmg/scripts/isotopes.py path/to/input.py
+The isotopes script is located in the folder scripts. To run the algorithm, 
+ensure the RMG packages are loaded and type::
 
-The input file in this case should be free of isotopes, since the model will 
-generate them automatically. One extra species contraint is available for 
-isotope runs, \lstinline{maximumIsotopicAtoms}, which restricts the number 
-of isotopes of a particular element that can be labeled on a molecule. For 
-low-enrichement scenarios, this could reduce computational costs.
+    python /path/to/rmg/scripts/isotopes.py /path/to/input/file.py
 
-The script generates a mechanism without isotopes first, finds all the 
-isotopomers that fit within the ``maximumIsotopicAtoms`` constraint, and then 
-generates the reactions between all labeled molecules. If you already have a 
-model (which includes atom mapping in RMG's format) which you would like to 
-add isotope labels to, you can use the command::
+The input file is identical to a standard RMG input file and should contain the
+conditions you want to run (unless you are inputting an already completed RMG
+model). Without any options, the script will run the original RMG input file to
+generate a model. Once the RMG job is finished, it will create new species for
+all isotopologues of previously generated species and then generate all
+reactions between the isotopologues.
 
-    python \$rmg/scripts/isotopes.py path/to/input.py  --original path/to/model/directory
+Some arguements can be used to alter the behavior of the script. If you already
+have a model (which includes atom mapping in RMG's format) which you would like
+to add isotope labels to, you can use the option ``--original path/to/model/directory``
+with the desired model files stored within with structure ``chemkin/chem_annotated.inp``
+and ``chemkin/species_dictionary.txt``.
 
-The desired model input should be stored within with structure 
-``chemkin/chem_annotated.inp` and ``chemkin/species_dictionary.txt``.
+The isotope script will use the specified the original model instead of
+running the input.py file. If you only desire certain reactions in the final
+output, you can add ``--useOriginalReactions`` in addition to ``--original``.
+This will create a full set of isotopically labeled versions of the reactions
+you input and avoid a time-consuming generate reactions proceedure.
 
-Some functionality in RMG software conflicts with how models are generated. 
-Reaction libraries need to explicitly mention the reactions of isotopomers 
-so they match various isotopes. If kinetic isotope effects for a specific 
-reaction are to be included, they could be input in a reaction library, but 
-this would need to be done manually. 
+The arguement ``--maximumIsotopicAtoms [integer]`` limits the number of enriched
+atoms in any isotopologue in the model. This is beneficial for decreasing model 
+size, runtime of model creation and runtime necessary for analysis.
 
-Following the generation, a number of diagnostics are ran to check model 
-accuracy. Isotopomers are checked to ensure their symmetries are consistent. 
-Then, the reaction path degeneracy among reactions differing only in isotope 
-labeling is checked to ensure it is consistent with the symmetry values of reactions. 
-If one of these checks throws a warning, the model will likely excibit non-natural 
+Adding kinetic isotope effects which are described in this paper can be obtained
+through the argument ``--kineticIsotopeEffect simple``. Currently this is the
+only supported method, though this can be extended to other effects.
+
+If you have a desired output folder, ``--output output_folder_name`` can direct
+all output files to the specified folder.
+
+There are some limitations in what can be used in isotope models. In general,
+RMG Reaction libraries and other methods of kinetic estimation that do not
+involve atom mapping to reaction recipes are not compatible (though they can be
+functional if all isotopologues are included in the reaction library). The
+algorithm also does not function with pressure dependent mechanisms generated
+by RMG, and has only been tested for gas phase kinetics. This algorithm currently
+only works for Carbon-13 enrichments.
+
+Following the generation, a number of diagnostics check model accuracy.
+Isotopologues are checked to ensure their symmetries are consistent.
+Then, the reaction path degeneracy among reactions differing only in isotope
+labeling is checked to ensure it is consistent with the symmetry values of reactions.
+If one of these checks throws a warning, the model will likely excibit non-natural
 fluctuations in enrichment.
 
-This algorithm is currently limited to systems without significant kinetic 
-isotope effects, and currently only works for Carbon-13.
+Output from script
+------------------
+
+The isotope generation script will output two files inside the nested folders
+``iso/chemkin``, unless ``--output`` is specified. The file
+``species_dictionary.txt`` lists the structure of all isotopologue using the
+RMG adjacency list structure. The other file of importance ``chem_annotated.inp``
+is a chemkin input file containing elements, species, thermo, and reactions of
+the entire system. 
