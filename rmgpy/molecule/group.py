@@ -1996,7 +1996,7 @@ class Group(Graph):
                                    'S2sc','S4sc','S4dc','S4tdc','S6sc','S6dc','S6tdc']
                 negativeCharged = ['Csc','Cdc','Ctc','C2sc','C2dc','C2tc',
                                    'N0sc','N1sc','N1dc','N3dc','N3tdc','N5dddc','N5tdc','N5b',
-                                   'O0sc','O0dc','O2sn','O2dc','O2tc',
+                                   'O0sc','O2sn','O2dc','O2tc',
                                    'S0sc','S2sc','S2dc','S2tc','S4dc','S4tdc','S6sc','S6dc','S6tdc']
                 if groupAtom.atomType[0] in [atomTypes[x] for x in positiveCharged] and atom.charge > 0:
                     pass
