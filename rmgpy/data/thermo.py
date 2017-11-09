@@ -499,7 +499,7 @@ def bicyclicDecompositionForPolyring(polyring):
                     pass
                 else:
                     aromaticBond_inA.setOrderNum(1)
-        mergedRing.update()#
+        mergedRing.saturate_unfilled_valence(update = True)
         bicyclicsMergedFromRingPair.append(mergedRing)
 
     return bicyclicsMergedFromRingPair, ringOccurancesDict
