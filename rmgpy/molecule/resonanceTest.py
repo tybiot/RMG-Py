@@ -48,10 +48,76 @@ class ResonanceTest(unittest.TestCase):
         self.assertEqual(len(molList), 3)
         self.assertTrue(any([any([atom.charge != 0 for atom in mol.vertices]) for mol in molList]))
 
+    def testNO2(self):
+        """Test resonance structure generation for [O]N=O radical
+
+        Test case for lone pair <=> multiple bond resonance"""
+        molList = generateResonanceStructures(Molecule(SMILES="[O]N=O"))
+        self.assertEqual(len(molList), 2)
+        self.assertTrue(any([any([atom.charge != 0 for atom in mol.vertices]) for mol in molList]))
+
+    def testN2O(self):
+        """Test resonance structure generation for N#[N+][O-]
+
+        The N5dd_N5tsResonanceStructures() was replaced by LonePairMultipleBondResonanceStructures().
+        Check that N2O, for which the original transition was writter, still works"""
+        molList = generateResonanceStructures(Molecule(SMILES="N#[N+][O-]"))
+        self.assertEqual(len(molList), 2)
+        self.assertTrue(all([any([atom.charge != 0 for atom in mol.vertices]) for mol in molList]))
+
+        dbonds = 0
+        tbonds = 0
+        for mol in molList:
+            for atom in mol.atoms:
+                for bond in atom.bonds.itervalues():
+                    if bond.isDouble():
+                        dbonds += 1
+                    elif bond.isTriple():
+                        tbonds += 1
+        self.assertEqual(dbonds, 4)  # each bond is counted twice, principally we'd expect 2 double and 1 triple bonds.
+        self.assertEqual(tbonds, 2)
+
+    def testCH2CHCHO(self):
+        """Test resonance structure generation for C=C[CH][O] bi-radical
+
+        Test case for allyl bi-radical resonance"""
+        molList = generateResonanceStructures(Molecule(SMILES="C=C[CH][O]"))
+        self.assertEqual(len(molList), 3)
+
+    def testCH2OCO2(self):
+        """Test resonance structure generation for [CH2]OC([O])=O bi-radical
+
+        This has an identical allyl shift resonance structure"""
+        molList = generateResonanceStructures(Molecule(SMILES="[CH2]OC([O])=O"))
+        self.assertEqual(len(molList), 1)
+
+    def testCH2CCO3(self):
+        """Test resonance structure generation for [CH2]OC([O])=O bi-radical"""
+        molList = generateResonanceStructures(Molecule(SMILES="C=[C]C(=O)O[O]"))
+        self.assertEqual(len(molList), 2)
+
+    def test_ozone(self):
+        """Test resonance structure generation for [O-][O+]=O and [S-][S+]=S
+
+        Compare that these iso-electronic strctures have a different (!) number of resonance structures"""
+        molList1 = generateResonanceStructures(Molecule(SMILES="[O-][O+]=O"))
+        self.assertEqual(len(molList1), 1)
+        molList2 = generateResonanceStructures(Molecule(SMILES="[S-][S+]=S"))
+        self.assertEqual(len(molList2), 3)
+
+    def testHCOvsHCS(self):
+        """Test resonance structure generation for [CH]=O and [CH]=S
+
+        Compare that these iso-electronic strctures have a different (!) number of resonance structures"""
+        molList1 = generateResonanceStructures(Molecule(SMILES="[CH]=O"))
+        self.assertEqual(len(molList1), 1)
+        molList2 = generateResonanceStructures(Molecule(SMILES="[CH]=S"))
+        self.assertEqual(len(molList2), 2)
+
     def testAzide(self):
         """Test resonance structure generation for ethyl azide
 
-        Simple case for N5dd <=> N5tc resonance"""
+        Simple case for N5dd <=> N5tc resonance, utilizes LonePairMultipleBondResonanceStructures()"""
         molList = generateResonanceStructures(Molecule(SMILES="CCN=[N+]=[N-]"))
         self.assertEqual(len(molList), 3)
         self.assertTrue(all([any([atom.charge != 0 for atom in mol.vertices]) for mol in molList]))
