@@ -119,7 +119,8 @@ def analyzeMolecule(mol):
 
     return features
 
-def generateResonanceStructures(mol, clarStructures=True, keepIsomorphic=False):
+
+def generateResonanceStructures(mol, clarStructures=True, keepIsomorphic=False, filterStructures=True):
     """
     Generate and return all of the resonance structures for the input molecule.
 
@@ -204,7 +205,11 @@ def generateResonanceStructures(mol, clarStructures=True, keepIsomorphic=False):
     methodList = populateResonanceAlgorithms(features)
     _generateResonanceStructures(molList, methodList, keepIsomorphic)
 
-    return molList
+    if filterStructures:
+        return filter_resonance_structures(molList)
+    else:
+        return molList
+
 
 def _generateResonanceStructures(molList, methodList, keepIsomorphic=False, copy=False):
     """
@@ -247,6 +252,88 @@ def _generateResonanceStructures(molList, methodList, keepIsomorphic=False, copy
         index += 1
 
     return molList
+
+
+def filter_resonance_structures(molList):
+    """
+    We often get too many resonance structures from the combination of all rules for species containing lonePairs.
+    Here we filter them out by minimizing the number of N/S/O atoms without a full octet.
+    For example, w/o filtering we may generate 3,000+ resonance structures for [N]=NON=O,
+    vs. only 3 resonance structures after filtering.
+    """
+    cython.declare(octetDeviation=cython.int, minOctetDeviation=cython.int, val_el=cython.int, i=cython.int)
+    cython.declare(octetDeviationList=list, filteredList=list, chargeSpanList=list, minChargeSpan=cython.int)
+    cython.declare(mol=Molecule, atom=Atom, atom2=Atom, bond12=Bond)
+
+    minOctetDeviation = 0  # minOctetDeviation is initialized below, so this value (0) has no effect
+    octetDeviationList = []
+    for mol in molList:
+        octetDeviation = 0  # This is the accumulated "score" for each molecule
+        for atom in mol.vertices:
+            val_el = 2 * (int(atom.getBondOrdersForAtom()) + atom.lonePairs) + atom.radicalElectrons
+            if atom.isCarbon():
+                octetDeviation += abs(8 - val_el)  # octet on C
+                if val_el > 8:
+                    octetDeviation += 1  # penalty for C with valance greater than 8 (as in [CH3-.][O+]=O)
+            elif atom.isNitrogen():
+                if atom.lonePairs:
+                    octetDeviation += abs(8 - val_el)  # octet on N p1/2/3
+                else:
+                    octetDeviation += min(abs(10 - val_el), abs(8 - val_el))  # octed/dectet for N p0
+                    # N p0 could also be close to octet and not dectet, such as in O=[N+][O-]
+                if val_el > 8:
+                    octetDeviation += 1  # penalty for N p0 with valance greater than 8 (as in O=[N.]=O,
+                    # [NH2.]=[:NH.], N#N=O, N#[N.]O, CCN=N#N)
+            elif atom.isOxygen():
+                octetDeviation += abs(8 - val_el)  # octet on O
+                if val_el > 8:
+                    octetDeviation += 1  # penalty for O with valance greater than 8 (as in O=[N+]=[O-.],
+                    # CC=[N+]=[::O-.])
+                if atom.atomType.label in ['O4sc', 'O4dc', 'O4tc']:
+                    octetDeviation += 1  # penalty for O p1 c+1
+                    # (as in [N-2][N+]#[O+], [O-]S#[O+], OS(S)([O-])#[O+], [OH+]=S(O)(=O)[O-], [OH.+][S-]=O;
+                    # [C-]#[O+] and [O-][O+]=O which are correct structures also get penalized here, but that's OK
+                    # since they are still selected as representative structures according to the rules here.)
+            elif atom.isSulfur():
+                if atom.lonePairs == 0 and not (val_el == 10 and atom.charge == +1):
+                    octetDeviation += abs(12 - val_el)  # duodectet on S p0, eg O=S(=O)(O)O val 12,
+                    # O[S](=O)=O val 11; allowing also dected c +1, eg O[S+](=O)(O)[O-] as having no deviation
+                    if val_el == 9:
+                        octetDeviation += 1  # eg O[S+]([O-])=O val 9 is undesired
+                elif atom.lonePairs == 1:
+                    octetDeviation += min(abs(8 - val_el), abs(10 - val_el))  # octet/dectet on S p1,
+                    # eg [O-][S+]=O val 8, O[S]=O val 9, OS([O])=O val 10
+                    if val_el in [7, 11]:
+                        octetDeviation += 1  # eg O[S+][O-] val 7, N=[N+]=[S-]=O val 11 are undesired
+                elif atom.lonePairs == 2:
+                    octetDeviation += min(abs(8 - val_el), abs(10 - val_el))  # octet/dectet on S p2,
+                    # eg [S][S] val 7, OS[O] val 8, [NH+]#[N+][S-][O-] val 9, O[S-](O)[N+]#N val 10
+                    if val_el == 11:
+                        octetDeviation += 1  # eg [NH+]#[N+][S-2]=O val 11 is undesired
+                elif atom.lonePairs == 3:
+                    octetDeviation += abs(8 - val_el)  # octet on S p3, eg [S-][O+]=O
+                    if val_el == 10:
+                        octetDeviation += 1  # eg [NH+]#[N+][S-2][O] val 10 is undesired
+            if atom.radicalElectrons >= 2 and atom.charge < 0:
+                octetDeviation += atom.radicalElectrons  # penalty for tri/birads, e.g. C=C=C([::O..-])O[O+]
+        octetDeviationList.append(octetDeviation)
+        if octetDeviation < minOctetDeviation or len(octetDeviationList) == 1:
+            minOctetDeviation = octetDeviation
+    filteredList = []
+    chargeSpanList = []  # filtering using the octet deviation criterion rules out most unrepresentative structures,
+    # however some charged strained species are still kept, e.g.: C[NH] <-> [CH3-2]=[NH+2]. Here we only allow
+    # one level of charge separation. E.g., a +2/-2 charge will only be allowed if the species cannot be represented
+    # by a structure with no charge separation.
+    minChargeSpan = 0
+    for i in xrange(len(molList)):
+        if octetDeviationList[i] == minOctetDeviation:
+            filteredList.append(molList[i])
+            chargeSpanList.append(sum([abs(atom.charge) for atom in molList[i].vertices]) / 2)
+            if chargeSpanList[-1] < minChargeSpan or len(chargeSpanList) == 1:
+                minChargeSpan = chargeSpanList[-1]
+    filteredList = [filteredList[i] for i in xrange(len(filteredList)) if chargeSpanList[i] <= minChargeSpan + 1]
+    return filteredList
+
 
 def generateAdjacentResonanceStructures(mol):
     """
