@@ -13,7 +13,7 @@ cpdef list generateAdjacentResonanceStructures(Molecule mol)
 
 cpdef list generateLonePairRadicalResonanceStructures(Molecule mol)
 
-cpdef list generateN5dd_N5tsResonanceStructures(Molecule mol)
+cpdef list generateLonePairMultipleBondResonanceStructures(Molecule mol)
 
 cpdef list generateIsomorphicResonanceStructures(Molecule mol)
 
