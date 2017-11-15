@@ -17,7 +17,7 @@ cpdef list generateLonePairRadicalResonanceStructures(Molecule mol)
 
 cpdef list generateLonePairMultipleBondResonanceStructures(Molecule mol)
 
-cpdef list generateIsomorphicResonanceStructures(Molecule mol)
+cpdef list generateIsomorphicResonanceStructures(Molecule mol, bint saturateH=?)
 
 cpdef list generateAromaticResonanceStructures(Molecule mol, dict features=?)
 

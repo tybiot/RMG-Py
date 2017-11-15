@@ -523,7 +523,7 @@ def generate_minimum_resonance_isomer(mol):
         metric_cand=list,
         )
 
-    candidates = resonance.generateIsomorphicResonanceStructures(mol)
+    candidates = resonance.generateIsomorphicResonanceStructures(mol, saturateH=True)
 
     sel = mol
     metric_sel = get_unpaired_electrons(sel)
