@@ -51,6 +51,9 @@ class KineticsJob:
     """
     A representation of a CanTherm kinetics job. This job is used to compute 
     and save the high-pressure-limit kinetics information for a single reaction.
+
+    `usedTST` - a boolean representing if TST was used to calculate the kinetics
+                if kinetics is already given in the input, then it is False.
     """
     
     def __init__(self, reaction,  
@@ -139,8 +142,9 @@ class KineticsJob:
         """
 
         if isinstance(self.reaction.kinetics, Arrhenius):
+            self.usedTST = False
             return None
-
+        self.usedTST=True
         kineticsClass = 'Arrhenius'
         
         tunneling = self.reaction.transitionState.tunneling
@@ -182,35 +186,38 @@ class KineticsJob:
         factor = 1e6 ** (order-1)
         
         f = open(outputFile, 'a')
-    
-        f.write('#   ======= =========== =========== =========== ===============\n')
-        f.write('#   Temp.   k (TST)     Tunneling   k (TST+T)   Units\n')
-        f.write('#   ======= =========== =========== =========== ===============\n')
-        
-        if self.Tlist is None:
-            Tlist = [300,400,500,600,800,1000,1500,2000]
-        else:
-            Tlist =self.Tlist.value_si
 
-        for T in Tlist:  
-            tunneling = reaction.transitionState.tunneling
-            reaction.transitionState.tunneling = None
-            try:
-                k0 = reaction.calculateTSTRateCoefficient(T) * factor
-            except SpeciesError:
-                k0 = 0
-            reaction.transitionState.tunneling = tunneling
-            try:
-                k = reaction.calculateTSTRateCoefficient(T) * factor
-                kappa = k / k0
-            except SpeciesError:
-                k = reaction.getRateCoefficient(T)
-                kappa = 0
-                logging.info("The species in reaction {} do not have adequate information for TST, using default kinetics values.".format(reaction))
-            tunneling = reaction.transitionState.tunneling
-            f.write('#    {0:4g} K {1:11.3e} {2:11g} {3:11.3e} {4}\n'.format(T, k0, kappa, k, self.kunits))
-        f.write('#   ======= =========== =========== =========== ===============\n')
-        
+        if self.usedTST:
+            #If TST is not used, eg. it was given in 'reaction', then this will
+            #throw an error.
+            f.write('#   ======= =========== =========== =========== ===============\n')
+            f.write('#   Temp.   k (TST)     Tunneling   k (TST+T)   Units\n')
+            f.write('#   ======= =========== =========== =========== ===============\n')
+
+            if self.Tlist is None:
+                Tlist = [300,400,500,600,800,1000,1500,2000]
+            else:
+                Tlist =self.Tlist.value_si
+
+            for T in Tlist
+                tunneling = reaction.transitionState.tunneling
+                reaction.transitionState.tunneling = None
+                try:
+                    k0 = reaction.calculateTSTRateCoefficient(T) * factor
+                except SpeciesError:
+                    k0 = 0
+                reaction.transitionState.tunneling = tunneling
+                try:
+                    k = reaction.calculateTSTRateCoefficient(T) * factor
+                    kappa = k / k0
+                except SpeciesError:
+                    k = reaction.getRateCoefficient(T)
+                    kappa = 0
+                    logging.info("The species in reaction {} do not have adequate information for TST, using default kinetics values.".format(reaction))
+                tunneling = reaction.transitionState.tunneling
+                f.write('#    {0:4g} K {1:11.3e} {2:11g} {3:11.3e} {4}\n'.format(T, k0, kappa, k, self.kunits))
+            f.write('#   ======= =========== =========== =========== ===============\n')
+
         # Reaction path degeneracy is INCLUDED in the kinetics itself!
         string = 'kinetics(label={0!r}, kinetics={1!r})'.format(reaction.label, reaction.kinetics)
         f.write('{0}\n\n'.format(prettify(string)))
