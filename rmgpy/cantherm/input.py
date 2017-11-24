@@ -143,8 +143,8 @@ def species(label, *args, **kwargs):
             spec.molecularWeight = (spec.molecule[0].getMolecularWeight(), "g/mol")
 
         if not energyTransferModel:
-            # default to RMG's default pdep value
-            spec.energyTransferModel = SingleExponentialDown(alpha0=(4.86,'kcal/mol'))
+            # default to RMG's method of generating energyTransferModel
+            spec.generateEnergyTransferModel()
 
     return spec
 
