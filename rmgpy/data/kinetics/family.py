@@ -53,7 +53,7 @@ from .rules import KineticsRules
 from rmgpy.exceptions import InvalidActionError, ReactionPairsError, KineticsError,\
                              UndeterminableKineticsError, ForbiddenStructureException,\
                              KekulizationError, ActionError
-
+import itertools
 ################################################################################
 
 class TemplateReaction(Reaction):
