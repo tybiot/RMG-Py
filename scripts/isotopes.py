@@ -51,7 +51,7 @@ def main():
     inputFile = args.input
     outputdir = os.path.abspath(args.output[0]) if args.output else os.path.abspath('.')
     original = os.path.abspath(args.original[0]) if args.original else None
-    kie = args.kineticIsotopeEffect if args.kineticIsotopeEffect else None
+    kie = args.kineticIsotopeEffect[0] if args.kineticIsotopeEffect else None
     supported_kie_methods = ['simple']
     if kie not in supported_kie_methods:
         raise InputError('The kie input, {0}, is not one of the currently supported methods, {1}'.format(kie,supported_kie_methods))
@@ -59,7 +59,7 @@ def main():
     run(inputFile, outputdir, original=original, 
         maximumIsotopicAtoms=maximumIsotopicAtoms,
         useOriginalReactions=useOriginalReactions,
-        kineticIsotopeEffects = kie)
+        kineticIsotopeEffect = kie)
 
 if __name__ == '__main__':
     main()
