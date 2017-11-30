@@ -535,56 +535,6 @@ def applyKineticIsotopeEffectSimple(rxn_clusters, kinetics_database):
     This method has a number of dependent methods, which appear at the start of
     this method
     """
-    def get_labeled_reactants(reaction, family):
-        """
-        Returns a list of labeled molecule objects given a species-based reaction object and it's
-        corresponding kinetic family
-        """
-        assert reaction.family == family.name, "{0} != {1}".format(reaction.family, family.name)
-        reactant_pairs = list(itertools.product(*[s.molecule for s in reaction.reactants]))
-        product_pairs = list(itertools.product(*[s.molecule for s in reaction.products]))
-        labeled_reactants = None
-        for reactant_pair, product_pair in itertools.product(reactant_pairs, product_pairs):
-            try:
-                labeled_reactants, __ = family.getLabeledReactantsAndProducts(reactant_pair, product_pair)
-                if labeled_reactants is not None:
-                    break
-            except Exception as e:
-                pass
-        if labeled_reactants is None:
-            raise Exception("could not find labeled reactants for reaction {}".format(reaction))
-        return labeled_reactants
-
-    def get_reduced_mass(labeled_molecules, labels, three_member_ts):
-        """
-        Returns the reduced mass of the labeled elements
-        within the labeled molecules. Used for kinetic isotope effect.
-        The equations are based on Melander & Saunders, Reaction rate of isotopic molecules, 1980
-
-        input: labeled_molecules - list of molecules with labels for the reaction
-               labels - list of strings to search for labels in the product
-               three_member_ts - boolean describing number of atoms in transition state
-                                 If True, reactions involving the movement of hydrogen between
-                                 two carbons is used. The labels should not include the hydrogen atom
-                                 If False, only a 2 member transition state is used.
-        output: float
-        """
-        reduced_mass = 0.
-        for labeled_mol in labeled_molecules:
-            for atom in labeled_mol.atoms:
-                if any([atom.label == label for label in labels]):
-                    #print 'found atom with label "{}"'.format(atom.label)
-                    if three_member_ts:
-                        reduced_mass += atom.element.mass
-                    else:
-                        reduced_mass += 1./atom.element.mass
-        if reduced_mass == 0.:
-            from rmgpy.exceptions import KineticsError
-            raise KineticsError("Did not find a labeled atom in molecules {}".format([mol.toAdjacencyList() for mol in labeled_molecules]))
-        if three_member_ts: # actually convert to reduced mass using the mass of hydrogen
-            from rmgpy.molecule import element
-            reduced_mass = 1/element.H.mass + 1/reduced_mass
-        return reduced_mass
 
     # now for the start of applyKineticIsotopeEffectSimple
     for index, cluster in enumerate(rxn_clusters):
@@ -623,7 +573,64 @@ def applyKineticIsotopeEffectSimple(rxn_clusters, kinetics_database):
         for reaction in cluster[:-1]:
             labeled_reactants = get_labeled_reactants(reaction,family)
             reduced_mass = get_reduced_mass(labeled_reactants, labels, three_member_ts)
-            reaction.kinetics.changeRate(math.sqrt(reduced_mass/base_reduced_mass))
+            reaction.kinetics.changeRate(math.sqrt(base_reduced_mass/reduced_mass))
+
+def get_labeled_reactants(reaction, family):
+    """
+    Returns a list of labeled molecule objects given a species-based reaction object and it's
+    corresponding kinetic family.
+
+    Used for KIE method 'simple'
+    """
+    from rmgpy.exceptions import ActionError
+    assert reaction.family == family.name, "{0} != {1}".format(reaction.family, family.name)
+    reactant_pairs = list(itertools.product(*[s.molecule for s in reaction.reactants]))
+    product_pairs = list(itertools.product(*[s.molecule for s in reaction.products]))
+    labeled_reactants = None
+    for reactant_pair, product_pair in itertools.product(reactant_pairs, product_pairs):
+        try:
+            labeled_reactants, __ = family.getLabeledReactantsAndProducts(reactant_pair, product_pair)
+            if labeled_reactants is not None:
+                break
+        except ActionError:
+            raise
+    if labeled_reactants is None:
+        raise Exception("could not find labeled reactants for reaction {} from family {}.".format(reaction,family))
+    return labeled_reactants
+
+def get_reduced_mass(labeled_molecules, labels, three_member_ts):
+    """
+    Returns the reduced mass of the labeled elements
+    within the labeled molecules. Used for kinetic isotope effect.
+    The equations are based on Melander & Saunders, Reaction rate of isotopic molecules, 1980
+
+    input: labeled_molecules - list of molecules with labels for the reaction
+           labels - list of strings to search for labels in the product
+           three_member_ts - boolean describing number of atoms in transition state
+                             If True, reactions involving the movement of hydrogen between
+                             two carbons is used. The labels should not include the hydrogen atom
+                             If False, only a 2 member transition state is used.
+    output: float
+
+    Used for KIE method 'simple'
+    """
+    reduced_mass = 0.
+    combined_mass = 0.
+    for labeled_mol in labeled_molecules:
+        for atom in labeled_mol.atoms:
+            if any([atom.label == label for label in labels]):
+                #print 'found atom with label "{}"'.format(atom.label)
+                if three_member_ts:
+                    combined_mass += atom.element.mass
+                else:
+                    reduced_mass += 1./atom.element.mass
+    if reduced_mass == 0. and combined_mass == 0:
+        from rmgpy.exceptions import KineticsError
+        raise KineticsError("Did not find a labeled atom in molecules {}".format([mol.toAdjacencyList() for mol in labeled_molecules]))
+    if three_member_ts: # actually convert to reduced mass using the mass of hydrogen
+        from rmgpy.molecule import element
+        reduced_mass = 1/element.H.mass + 1/combined_mass
+    return 1./reduced_mass
 
 def isEnriched(obj):
     """
@@ -809,7 +816,7 @@ def ensure_correct_degeneracies(reaction_isotopomer_list, print_data = False, r_
 
 def run(inputFile, outputDir, original=None, maximumIsotopicAtoms = 1,
                             useOriginalReactions = False,
-                            kineticIsotopeEffects = None):
+                            kineticIsotopeEffect = None):
     """
     Accepts one input file with the RMG-Py model to generate.
 
@@ -853,4 +860,4 @@ def run(inputFile, outputDir, original=None, maximumIsotopicAtoms = 1,
     os.mkdir(outputdirIso)
 
     logging.info('isotope: Generating RMG isotope model in {}'.format(outputdirIso))
-    generateIsotopeModel(outputdirIso, rmg, isotopes, useOriginalReactions = useOriginalReactions, kineticIsotopeEffects = kineticIsotopeEffects)
+    generateIsotopeModel(outputdirIso, rmg, isotopes, useOriginalReactions = useOriginalReactions, kineticIsotopeEffect = kineticIsotopeEffect)
