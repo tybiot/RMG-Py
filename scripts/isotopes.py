@@ -53,7 +53,7 @@ def main():
     original = os.path.abspath(args.original[0]) if args.original else None
     kie = args.kineticIsotopeEffect[0] if args.kineticIsotopeEffect else None
     supported_kie_methods = ['simple']
-    if kie not in supported_kie_methods:
+    if kie not in supported_kie_methods and kie is not None:
         raise InputError('The kie input, {0}, is not one of the currently supported methods, {1}'.format(kie,supported_kie_methods))
     initializeLog(logging.INFO, os.path.join(os.getcwd(), 'RMG.log'))
     run(inputFile, outputdir, original=original, 
