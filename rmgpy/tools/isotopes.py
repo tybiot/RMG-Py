@@ -222,7 +222,9 @@ def generateIsotopeReactions(isotopeless_reactions, isotopes):
 
         # make reaction objects
         for pair in reactant_pairs:
-            unfiltered_rxns = reactSpecies(pair,shouldDeflate = False)
+            # copy species so they don't get modified
+            speciesTuple = tuple([spc.copy(deep=True) for spc in pair])
+            unfiltered_rxns = getDB('kinetics').generate_reactions_from_families(speciesTuple)
             # remove reactions whose products don't match the original reactions
             rxn_index5 = 0
             while rxn_index5 < len(unfiltered_rxns):
