@@ -199,7 +199,7 @@ class KineticsJob:
             else:
                 Tlist =self.Tlist.value_si
 
-            for T in Tlist
+            for T in Tlist:
                 tunneling = reaction.transitionState.tunneling
                 reaction.transitionState.tunneling = None
                 try:
