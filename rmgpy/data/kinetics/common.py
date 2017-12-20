@@ -291,36 +291,50 @@ def find_degenerate_reactions(rxnList, same_reactants=None, kinetics_database=No
                 # Try to determine if the current rxn0 is identical or isomorphic to any reactions in the sublist
                 isomorphic = False
                 identical = False
-                sameTemplate = False
+                sameTemplate = True
                 for rxn in rxnList1:
                     isomorphic = rxn0.isIsomorphic(rxn, checkIdentical=False, checkTemplateRxnProducts=True)
-                    if not isomorphic:
-                        identical = False
-                    else:
+                    if isomorphic:
                         identical = rxn0.isIsomorphic(rxn, checkIdentical=True, checkTemplateRxnProducts=True)
-                    sameTemplate = frozenset(rxn.template) == frozenset(rxn0.template)
-                    if not isomorphic:
+                        if frozenset(rxn.template) != frozenset(rxn0.template):
+                            sameTemplate = False
+                    else:
                         # a different product was found, go to next list
                         break
-                    elif not sameTemplate:
-                        # a different transition state was found, mark as duplicate and
-                        # go to the next sublist
-                        rxn.duplicate = True
-                        rxn0.duplicate = True
+                    if identical:
+                        # An exact copy of rxn0 is already in our list, so we can move on to processing
                         break
-                    elif identical:
-                        # An exact copy of rxn0 is already in our list, so we can move on to the next rxn
-                        break
-                    else: # sameTemplate and isomorphic but not identical
+                    else:
                         # This is the right sublist for rxn0, but continue to see if there is an identical rxn
                         continue
+
+                # Process the reaction depending on the results of the comparisons
+                if isomorphic:
+                    if identical:
+                        if sameTemplate:
+                            # This is the right sublist, and there is an identical reaction
+                            # Therefore, this instance should not contribute to degeneracy
+                            break
+                        else:
+                            # This is an isomorphic sublist, but the reaction templates are different
+                            # This needs to go in a separate sublist, but we do not want to mark it as a duplicate
+                            continue
+                    else:
+                        if sameTemplate:
+                            # We found the right sublist, and there is no identical reaction
+                            # We should add rxn0 to the sublist as a degenerate rxn, and move on to the next rxn
+                            rxnList1.append(rxn0)
+                            break
+                        else:
+                            # We found an isomorphic sublist, but the reaction templates are different
+                            # We need to mark this as a duplicate and continue searching the remaining sublists
+                            rxn0.duplicate = True
+                            rxnList1[0].duplicate = True
+                            continue
                 else:
-                    # We did not break, so this is the right sublist, but there is no identical reaction
-                    # This means that we should add rxn0 to the sublist as a degenerate rxn
-                    rxnList1.append(rxn0)
-                if isomorphic and sameTemplate:
-                    # We already found the right sublist, so we can move on to the next rxn
-                    break
+                    # This is not an isomorphic sublist, so we need to continue searching the remaining sublists
+                    # Note: This else statement does not serve a functional purpose, and is only for clarity
+                    continue
             else:
                 # We did not break, which means that there was no isomorphic sublist, so create a new one
                 rxnSorted.append([rxn0])
